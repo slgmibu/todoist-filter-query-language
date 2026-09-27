@@ -89,3 +89,12 @@ today & overdue,
 p1 & no date,
 ##Work & /Urgent,
 assigned to: me & !completed
+
+// --- 8. Best Practices for Filters (Wildcards, Multiple Lists & Emojis) ---
+p1 & overdue, p4 & today
+%urgent*
+#Welcome 👋
+#Welcome *
+/Sprint 🚀
+%Café
+#Projet Été
