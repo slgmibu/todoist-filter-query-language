@@ -1,6 +1,6 @@
 # Todoist Filter Query Language (TFQL)
 
-Multi-editor syntax highlighting and language definition for **Todoist Filter Queries** (TFQL).
+Multi-editor syntax highlighting and code formatting for **Todoist Filter Queries** (TFQL).
 
 Cross-platform support for:
 - **Antigravity IDE** (macOS, Linux, Windows)
@@ -46,28 +46,65 @@ While exact color shades depend on your active editor theme (e.g., *Dark+*, *Mon
 
 ---
 
+## Code Formatting & Style Guide
+
+TFQL includes an auto-formatter that cleans up whitespace, line breaks, casing, and compound views.
+
+### Style Rules Enforced:
+1. **Multi-View Query Splitting:** Comma-separated multi-view filters are split across lines so each list is readable at a glance:
+   ```tfql
+   // Before:
+   today & overdue, p1 & no date, ##Work & /Urgent
+
+   // Formatted:
+   today & overdue,
+   p1 & no date,
+   ##Work & /Urgent
+   ```
+2. **Normalized Operator Spacing:** Exactly one space around binary operators (`&`, `|`), and zero spaces after unary NOT (`!`):
+   ```tfql
+   (today | overdue) & #Work & !assigned
+   ```
+3. **Clean Parentheses:** No inner padding inside groupings (`(query)` instead of `( query )`).
+4. **Predicate Colons:** Zero spaces before the colon, exactly one space after (`due: today`, `workspace: Doist`).
+5. **Casing Normalization:** Standardizes keywords and priorities to lowercase (`p1`..`p4`, `today`, `overdue`, `recurring`).
+
+---
+
+### How to Format
+
+#### 1. In Antigravity IDE / VS Code / Cursor
+- Press **`Shift + Option + F`** (macOS) or **`Shift + Alt + F`** (Windows / Linux).
+- Or enable auto-format on save in `settings.json`:
+  ```json
+  "[tfql]": {
+    "editor.formatOnSave": true
+  }
+  ```
+
+#### 2. In CotEditor
+- Press **`Control + Option + F`** (or select **Script > Format TFQL**).
+
+#### 3. CLI (Terminal / Python)
+```bash
+# Format files in-place
+python3 tools/formatter.py -w query.tfql
+
+# Format from stdin (pipes / filters)
+cat query.tfql | python3 tools/formatter.py
+
+# Check formatting in CI (exits with 1 if unformatted)
+python3 tools/formatter.py --check query.tfql
+```
+
+---
+
 ## Language Specifications
 
 ### Supported File Extensions
 - `.tfql` (Todoist Filter Query Language)
 - `.tdq` (Todoist Queries)
 - `.todoist`
-
-### Grammar Token Mapping
-
-| Feature | TFQL Syntax | TextMate Scope | CotEditor Token |
-| :--- | :--- | :--- | :--- |
-| **Projects** | `#Work`, `##Personal`, `#"Client Alpha"` | `entity.name.type.project` | `types` |
-| **Sections** | `/Inbox`, `/Current Sprint`, `/*` | `entity.name.section` | `commands` |
-| **Labels** | `@urgent`, `@"follow up"`, `%email` | `variable.other.label` | `variables` |
-| **Predicates** | `due:`, `due before:`, `created:`, `assigned to:`, `workspace:`, `search:` | `keyword.control.predicate` | `attributes` |
-| **Logical Operators**| `&`, `\|`, `!`, `and`, `or`, `not` | `keyword.operator.logical` | `keywords` |
-| **Compound Divider** | `,` | `punctuation.separator.query` | `keywords` |
-| **Priorities** | `p1`..`p4`, `priority 1`..`4` | `constant.numeric.priority` | `numbers` |
-| **Temporal Tokens** | `today`, `tomorrow`, `yesterday`, `next`, `past`, `mon`..`sun` | `constant.language.temporal` | `values` |
-| **Offsets / Dates** | `+7d`, `-14d`, `2026-10-01` | `constant.numeric.date` | `numbers` |
-| **Strings** | `"meeting notes"`, `'query'` | `string.quoted` | `strings` |
-| **Comments** | `// Comment line`, `/* block */` | `comment.line`, `comment.block` | `comments` |
 
 ---
 
@@ -79,14 +116,17 @@ todoist-filter-query-language/
 │   └── tfql.tmLanguage.json          # Master TextMate grammar (Single source of truth)
 ├── extensions/
 │   └── vscode-antigravity/           # Antigravity IDE & VS Code extension package
+│       ├── extension.js              # Auto-formatting provider (Shift+Option+F)
 │       ├── package.json
 │       ├── language-configuration.json
 │       └── syntaxes/
 ├── dist/
 │   └── coteditor/
-│       └── TFQL.cotsyntax/           # Compiled CotEditor bundle
+│       ├── TFQL.cotsyntax/           # Compiled CotEditor bundle
+│       └── Format TFQL.py            # CotEditor Script Menu filter (Control+Option+F)
 ├── tools/
 │   ├── build.py                      # Compiler: TextMate grammar -> CotEditor bundle
+│   ├── formatter.py                  # Core Python formatter engine & CLI
 │   └── install.py                    # Cross-platform installer engine (macOS, Linux, Windows)
 ├── test/
 │   └── example.tfql                  # Test suite
@@ -114,6 +154,6 @@ The installer automatically detects your operating system and deploys to all ins
 ```
 
 ### What gets deployed:
-- **macOS:** CotEditor (`~/Library/Application Support/CotEditor/Syntaxes`), Antigravity IDE, VS Code, Cursor.
+- **macOS:** CotEditor syntax bundle + Script Menu formatter (`~/Library/Application Support/CotEditor`), Antigravity IDE, VS Code, Cursor.
 - **Linux:** Antigravity IDE, VS Code, Cursor (`~/.<editor>/extensions`).
 - **Windows:** Antigravity IDE, VS Code, Cursor (`%USERPROFILE%\.<editor>\extensions`).

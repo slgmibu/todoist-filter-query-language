@@ -1,14 +1,19 @@
 {
   "name": "todoist-filter-query-language",
   "displayName": "Todoist Filter Queries (TFQL)",
-  "description": "Syntax highlighting for Todoist Filter Query Language (TFQL / .tdq / .tfql)",
-  "version": "1.0.0",
+  "description": "Syntax highlighting and auto-formatting for Todoist Filter Query Language (TFQL / .tdq / .tfql)",
+  "version": "1.2.0",
   "publisher": "antigravity",
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:tfql"
+  ],
   "engines": {
     "vscode": "^1.70.0"
   },
   "categories": [
-    "Programming Languages"
+    "Programming Languages",
+    "Formatters"
   ],
   "contributes": {
     "languages": [

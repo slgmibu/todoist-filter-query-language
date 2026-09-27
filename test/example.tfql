@@ -20,18 +20,18 @@ no time
 no date | no time
 created before: -365 days
 (today | overdue) & #Work
-(P1 | P2) & 14 days
+(p1 | p2) & 14 days
 created before: -30 days
-Saturday & %night
+saturday & %night
 #Work & assigned to: me
 
 // --- 2. Label Variations (@ and % prefixes & wildcards) ---
-Today & %email
+today & %email
 %work | %office
 7 days & %waiting
 (assigned to: Denise | assigned to: Carol) & (due after: sunday & due before: 8 days after sunday) & %Todoist
 (all | today) & (all | overdue) & %work
-Today & !#Work
+today & !#Work
 #Homework & tomorrow & !%languages
 %home*
 no labels
@@ -43,7 +43,7 @@ no labels
 !/*
 !/* & !#Inbox
 ##Design team
-#One \& Two
+#One \ & Two
 #Shopping\ list
 ##School & !#Science
 #Work & /Meetings
@@ -54,18 +54,20 @@ workspace: Doist
 (workspace: Doist | workspace: Halist)
 
 // --- 5. Dates, Times, Deadlines & Offsets ---
-date: Jan 3
-date before: May 5 or date before: 5/5
-date after: May 5 or date after: 5/5
+date: jan 3
+date before: may 5 or date before: 5/5
+date after: may 5 or date after: 5/5
 due before: +4 hours
 due before: next week
 due before: sat
 (due: next week | due after: next week) & due before: 1 week after next week
 due before: first day
-due: yesterday, today
+due: yesterday,
+today
 today & due before: today at 2pm
-Overdue or over due or od
-overdue & !no time, today & !no time
+overdue or over due or od
+overdue & !no time,
+today & !no time
 5 days or next 5 days
 recurring
 !recurring
@@ -84,14 +86,16 @@ search: "quarterly review" & ##Operations
 search: "migration" & @infra & due: next week
 
 // --- 7. Compound Multi-section Filters (comma delimited) ---
-#Inbox & no date, All & !#Inbox & !no date
+#Inbox & no date,
+all & !#Inbox & !no date
 today & overdue,
 p1 & no date,
 ##Work & /Urgent,
 assigned to: me & !completed
 
 // --- 8. Best Practices for Filters (Wildcards, Multiple Lists & Emojis) ---
-p1 & overdue, p4 & today
+p1 & overdue,
+p4 & today
 %urgent*
 #Welcome 👋
 #Welcome *
