@@ -139,25 +139,29 @@ python3 tools/formatter.py --check query.tfql
 ```
 todoist-filter-query-language/
 ├── grammar/
-│   └── tfql.tmLanguage.json          # Master TextMate grammar (Single source of truth)
+│   └── tfql.tmLanguage.json          # Canonical TextMate grammar (Single source of truth)
 ├── extensions/
 │   └── vscode-antigravity/           # Antigravity IDE & VS Code extension package
-│       ├── extension.js              # Auto-formatting provider (Shift+Option+F)
-│       ├── package.json
-│       ├── language-configuration.json
-│       └── syntaxes/
+│       ├── extension.js              # Formatting provider & clipboard one-liner commands
+│       ├── package.json              # Extension manifest & command/keybinding definitions
+│       ├── language-configuration.json # Brackets, comments, and auto-pairing rules
+│       └── syntaxes/                 # Synced extension grammar
 ├── dist/
+│   ├── todoist-filter-query-language-1.4.0.vsix # Packaged installable VSIX bundle
 │   └── coteditor/
-│       ├── TFQL.cotsyntax/           # Compiled CotEditor bundle
-│       └── Format TFQL.py            # CotEditor Script Menu filter (Control+Option+F)
+│       ├── TFQL.cotsyntax/           # Compiled CotEditor syntax definition package
+│       ├── Format TFQL.py            # CotEditor multi-line tree formatter (^~F)
+│       └── Copy as Todoist One-Liner.py # CotEditor clipboard one-liner exporter (^~C)
 ├── tools/
-│   ├── build.py                      # Compiler: TextMate grammar -> CotEditor bundle
-│   ├── formatter.py                  # Core Python formatter engine & CLI
-│   └── install.py                    # Cross-platform installer engine (macOS, Linux, Windows)
+│   ├── build.py                      # Compiler: TextMate grammar -> CotEditor bundle & VSIX
+│   ├── formatter.py                  # Core AST formatter engine, multi-line aggregator & CLI
+│   └── install.py                    # Cross-platform installer (Antigravity IDE, VS Code, CotEditor)
+├── tests/
+│   └── test_formatter.py             # Pytest automated test suite (AST idempotency, Node parity)
 ├── test/
-│   └── example.tfql                  # Test suite
-├── install.sh                        # macOS / Linux installer
-├── install.ps1                       # Windows PowerShell installer
+│   └── example.tfql                  # Specification test file (all official Todoist filter examples)
+├── install.sh                        # macOS / Linux installer script
+├── install.ps1                       # Windows PowerShell installer script
 └── README.md
 ```
 
