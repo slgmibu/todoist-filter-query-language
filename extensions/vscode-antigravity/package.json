@@ -2,7 +2,7 @@
   "name": "todoist-filter-query-language",
   "displayName": "Todoist Filter Queries (TFQL)",
   "description": "Syntax highlighting and auto-formatting for Todoist Filter Query Language (TFQL / .tdq / .tfql)",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "publisher": "antigravity",
   "main": "./extension.js",
   "activationEvents": [
@@ -38,6 +38,45 @@
         "language": "tfql",
         "scopeName": "source.tfql",
         "path": "./syntaxes/tfql.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "tfql.copyOneLiner",
+        "title": "TFQL: Copy Query as One-Liner for Todoist",
+        "category": "TFQL"
+      },
+      {
+        "command": "tfql.formatCompact",
+        "title": "TFQL: Convert Document to One-Liners (Compact)",
+        "category": "TFQL"
+      },
+      {
+        "command": "tfql.formatExpanded",
+        "title": "TFQL: Format Document (Expanded Multi-Line)",
+        "category": "TFQL"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "tfql.copyOneLiner",
+          "when": "editorLangId == tfql",
+          "group": "1_modification"
+        },
+        {
+          "command": "tfql.formatCompact",
+          "when": "editorLangId == tfql",
+          "group": "1_modification"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "tfql.copyOneLiner",
+        "key": "ctrl+alt+c",
+        "mac": "cmd+alt+c",
+        "when": "editorLangId == tfql"
       }
     ]
   }

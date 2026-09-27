@@ -6,6 +6,7 @@
 """CotEditor Script Menu Filter for Todoist Filter Query Language (TFQL).
 
 Formats the active TFQL document on demand or via shortcut Control+Option+F:
+- Fully idempotent: multi-line statement aggregation prevents parenthetical corruption
 - Hierarchical multi-line tree formatting for nested parentheses (4 spaces indent, leading operators)
 - Normalized spacing around operators (&, |) and unary (!)
 - Preserves escaped characters and string literals
@@ -193,7 +194,7 @@ def pretty_print_tree(
     return lines
 
 
-def format_single_clause(clause: str, indent_size: int = 4) -> list[str]:
+def format_single_clause(clause: str, style: str = "expanded", indent_size: int = 4) -> list[str]:
     line = clause.strip()
     if not line:
         return [""]
@@ -207,7 +208,7 @@ def format_single_clause(clause: str, indent_size: int = 4) -> list[str]:
     max_d = max((count_depth(x) for x in tree), default=0)
     inline_repr = render_inline(tree)
 
-    if max_d >= 2 or (max_d >= 1 and len(inline_repr) > 60):
+    if style == "expanded" and (max_d >= 2 or (max_d >= 1 and len(inline_repr) > 60)):
         return pretty_print_tree(tree, 0, indent_str)
     else:
         return [inline_repr]
@@ -258,29 +259,113 @@ def split_top_level_commas(line: str) -> list[str]:
     return [c for c in clauses if c]
 
 
-def format_text(text: str, indent_size: int = 4) -> str:
-    lines = text.splitlines()
-    output_lines: list[str] = []
-    for line in lines:
-        stripped = line.strip()
-        if not stripped or stripped.startswith("//") or stripped.startswith("/*") or stripped.startswith("*"):
-            output_lines.append(stripped)
+def get_paren_delta(line: str) -> int:
+    delta = 0
+    in_quote = None
+    escaped = False
+    for char in line:
+        if escaped:
+            escaped = False
             continue
-        clauses = split_top_level_commas(stripped)
-        if len(clauses) > 1:
-            for i, clause in enumerate(clauses):
-                clause_lines = format_single_clause(clause, indent_size=indent_size)
-                if i < len(clauses) - 1:
-                    clause_lines[-1] = f"{clause_lines[-1]},"
-                output_lines.extend(clause_lines)
+        if char == "\\":
+            escaped = True
+            continue
+        if in_quote:
+            if char == in_quote:
+                in_quote = None
+            continue
+        if char in ('"', "'"):
+            in_quote = char
+            continue
+        if char == "(":
+            delta += 1
+        elif char == ")":
+            delta -= 1
+    return delta
+
+
+def aggregate_statements(text: str) -> list[tuple[str, str]]:
+    raw_lines = text.splitlines()
+    items: list[tuple[str, str]] = []
+    current_query_lines: list[str] = []
+    paren_depth = 0
+
+    def flush_query() -> None:
+        nonlocal current_query_lines, paren_depth
+        if current_query_lines:
+            joined = " ".join(l.strip() for l in current_query_lines if l.strip())
+            items.append(("QUERY", joined))
+            current_query_lines = []
+            paren_depth = 0
+
+    for line in raw_lines:
+        stripped = line.strip()
+
+        if stripped.startswith("//") or stripped.startswith("/*") or stripped.startswith("*"):
+            flush_query()
+            items.append(("COMMENT", line))
+            continue
+
+        if not stripped:
+            if paren_depth == 0 and not (current_query_lines and current_query_lines[-1].strip().endswith((",", "&", "|"))):
+                flush_query()
+                items.append(("BLANK", ""))
+            continue
+
+        delta = get_paren_delta(stripped)
+
+        if not current_query_lines:
+            current_query_lines.append(stripped)
+            paren_depth += delta
         else:
-            output_lines.extend(format_single_clause(stripped, indent_size=indent_size))
+            prev_line = current_query_lines[-1].strip()
+            is_continuation = (
+                paren_depth > 0 or
+                prev_line.endswith(("&", "|", ",", "(")) or
+                stripped.startswith(("&", "|", ")"))
+            )
+            if is_continuation:
+                current_query_lines.append(stripped)
+                paren_depth += delta
+            else:
+                flush_query()
+                current_query_lines.append(stripped)
+                paren_depth += delta
+
+    flush_query()
+    return items
+
+
+def format_text(text: str, style: str = "expanded", indent_size: int = 4) -> str:
+    blocks = aggregate_statements(text)
+    output_lines: list[str] = []
+
+    for block_type, content in blocks:
+        if block_type == "COMMENT":
+            output_lines.append(content)
+        elif block_type == "BLANK":
+            output_lines.append("")
+        elif block_type == "QUERY":
+            clauses = split_top_level_commas(content)
+            if len(clauses) > 1:
+                if style == "compact":
+                    formatted_clauses = [format_single_clause(c, style="compact", indent_size=indent_size)[0] for c in clauses]
+                    output_lines.append(", ".join(formatted_clauses))
+                else:
+                    for i, clause in enumerate(clauses):
+                        clause_lines = format_single_clause(clause, style=style, indent_size=indent_size)
+                        if i < len(clauses) - 1:
+                            clause_lines[-1] = f"{clause_lines[-1]},"
+                        output_lines.extend(clause_lines)
+            else:
+                output_lines.extend(format_single_clause(content, style=style, indent_size=indent_size))
+
     return "\n".join(output_lines) + ("\n" if text.endswith("\n") else "")
 
 
 def main() -> None:
     content = sys.stdin.read()
-    sys.stdout.write(format_text(content))
+    sys.stdout.write(format_text(content, style="expanded"))
 
 
 if __name__ == "__main__":

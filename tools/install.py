@@ -86,7 +86,7 @@ def install() -> None:
     build_script = root / "tools" / "build.py"
     subprocess.run([sys.executable, str(build_script)], check=True)
 
-    vsix_path = dist_dir / "todoist-filter-query-language-1.3.0.vsix"
+    vsix_path = dist_dir / "todoist-filter-query-language-1.4.0.vsix"
 
     print("\n==> Deploying to detected editors:")
     if vsix_path.exists():
@@ -111,10 +111,11 @@ def install() -> None:
                     script_menu_dir = target_path.parent / "ScriptMenu"
                     if script_menu_dir.parent.exists() or "Standard" in name:
                         script_menu_dir.mkdir(parents=True, exist_ok=True)
-                        dest_script = script_menu_dir / "Format TFQL.py"
-                        shutil.copy2(cot_script, dest_script)
-                        dest_script.chmod(0o755)
-                        print(f"  ✓ [{name}] Installed formatter script: {dest_script}")
+                        for script_file in (dist_dir / "coteditor").glob("*.py"):
+                            dest_script = script_menu_dir / script_file.name
+                            shutil.copy2(script_file, dest_script)
+                            dest_script.chmod(0o755)
+                            print(f"  ✓ [{name}] Installed script: {dest_script}")
             else:
                 target_path.mkdir(parents=True, exist_ok=True)
                 dest = target_path / ext_name

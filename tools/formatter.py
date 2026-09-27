@@ -1,11 +1,13 @@
 r"""TFQL Code Formatter.
 
 Enforces an opinionated, clean coding style for Todoist Filter Query Language (TFQL):
+- Multi-line statement aggregation (fully idempotent: formatting an already formatted document preserves AST)
 - Hierarchical multi-line tree formatting for nested parentheses (4 spaces indent, leading operators)
+- Compact one-liner conversion for seamless pasting into Todoist with normalized whitespace
 - Normalized spacing around binary operators (&, |) and unary (!)
 - Preserves escaped characters (e.g. #One \& Two) and string literals (e.g. search: "...")
 - Consistent predicate colon formatting (0 before, 1 after)
-- Top-level comma splitting (compound multi-views on separate lines)
+- Top-level comma splitting (compound multi-views on separate lines in expanded mode)
 - Normalized parentheses padding and keyword casing (p1..p4, today, overdue)
 - Preservation of string literals, comments, and project/label casing
 """
@@ -14,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any, List, Tuple
@@ -164,7 +167,7 @@ def count_depth(item: Any) -> int:
 
 
 def render_inline(elements: list[Any]) -> str:
-    """Render elements as a single normalized line."""
+    """Render elements as a single normalized line with strict whitespace."""
     res: list[str] = []
     for el in elements:
         if isinstance(el, tuple) and el[0] in ("(", "!("):
@@ -235,7 +238,7 @@ def format_single_clause(clause: str, style: str = "expanded", indent_size: int 
     max_d = max((count_depth(x) for x in tree), default=0)
     inline_repr = render_inline(tree)
 
-    # Expand into multi-line tree if:
+    # In expanded mode, expand into multi-line tree if:
     # 1. Nested parentheses exist (max_d >= 2), or
     # 2. Contains groups (max_d >= 1) and length exceeds 60 characters
     should_expand = style == "expanded" and (max_d >= 2 or (max_d >= 1 and len(inline_repr) > 60))
@@ -298,30 +301,132 @@ def split_top_level_commas(line: str) -> list[str]:
     return [c for c in clauses if c]
 
 
-def format_text(text: str, style: str = "expanded", indent_size: int = 4) -> str:
-    """Format full TFQL document text."""
-    lines = text.splitlines()
-    output_lines: list[str] = []
+def get_paren_delta(line: str) -> int:
+    """Calculate net open parenthesis delta for a line, ignoring quotes and escapes."""
+    delta = 0
+    in_quote: str | None = None
+    escaped = False
+    for char in line:
+        if escaped:
+            escaped = False
+            continue
+        if char == "\\":
+            escaped = True
+            continue
+        if in_quote:
+            if char == in_quote:
+                in_quote = None
+            continue
+        if char in ('"', "'"):
+            in_quote = char
+            continue
+        if char == "(":
+            delta += 1
+        elif char == ")":
+            delta -= 1
+    return delta
 
-    for line in lines:
+
+def aggregate_statements(text: str) -> list[tuple[str, str]]:
+    """Group lines into logical statements, comment lines, or blank lines.
+    
+    This ensures that multi-line queries (whether previously formatted or split)
+    are aggregated into complete AST expressions before formatting, guaranteeing
+    perfect idempotency.
+    """
+    raw_lines = text.splitlines()
+    items: list[tuple[str, str]] = []
+    current_query_lines: list[str] = []
+    paren_depth = 0
+
+    def flush_query() -> None:
+        nonlocal current_query_lines, paren_depth
+        if current_query_lines:
+            joined = " ".join(l.strip() for l in current_query_lines if l.strip())
+            items.append(("QUERY", joined))
+            current_query_lines = []
+            paren_depth = 0
+
+    for line in raw_lines:
         stripped = line.strip()
-        # Preserve comments and empty lines
-        if not stripped or stripped.startswith("//") or stripped.startswith("/*") or stripped.startswith("*"):
-            output_lines.append(stripped)
+
+        # Comment lines
+        if stripped.startswith("//") or stripped.startswith("/*") or stripped.startswith("*"):
+            flush_query()
+            items.append(("COMMENT", line))
             continue
 
-        # Check if line contains a top-level compound query separated by commas
-        clauses = split_top_level_commas(stripped)
-        if len(clauses) > 1:
-            for i, clause in enumerate(clauses):
-                clause_lines = format_single_clause(clause, style=style, indent_size=indent_size)
-                if i < len(clauses) - 1:
-                    clause_lines[-1] = f"{clause_lines[-1]},"
-                output_lines.extend(clause_lines)
+        # Blank lines
+        if not stripped:
+            if paren_depth == 0 and not (current_query_lines and current_query_lines[-1].strip().endswith((",", "&", "|"))):
+                flush_query()
+                items.append(("BLANK", ""))
+            continue
+
+        delta = get_paren_delta(stripped)
+
+        if not current_query_lines:
+            current_query_lines.append(stripped)
+            paren_depth += delta
         else:
-            output_lines.extend(format_single_clause(stripped, style=style, indent_size=indent_size))
+            prev_line = current_query_lines[-1].strip()
+            is_continuation = (
+                paren_depth > 0 or
+                prev_line.endswith(("&", "|", ",", "(")) or
+                stripped.startswith(("&", "|", ")"))
+            )
+            if is_continuation:
+                current_query_lines.append(stripped)
+                paren_depth += delta
+            else:
+                flush_query()
+                current_query_lines.append(stripped)
+                paren_depth += delta
+
+    flush_query()
+    return items
+
+
+def format_text(text: str, style: str = "expanded", indent_size: int = 4) -> str:
+    """Format full TFQL document text (fully idempotent)."""
+    blocks = aggregate_statements(text)
+    output_lines: list[str] = []
+
+    for block_type, content in blocks:
+        if block_type == "COMMENT":
+            output_lines.append(content)
+        elif block_type == "BLANK":
+            output_lines.append("")
+        elif block_type == "QUERY":
+            clauses = split_top_level_commas(content)
+            if len(clauses) > 1:
+                if style == "compact":
+                    formatted_clauses = [format_single_clause(c, style="compact", indent_size=indent_size)[0] for c in clauses]
+                    output_lines.append(", ".join(formatted_clauses))
+                else:
+                    for i, clause in enumerate(clauses):
+                        clause_lines = format_single_clause(clause, style=style, indent_size=indent_size)
+                        if i < len(clauses) - 1:
+                            clause_lines[-1] = f"{clause_lines[-1]},"
+                        output_lines.extend(clause_lines)
+            else:
+                output_lines.extend(format_single_clause(content, style=style, indent_size=indent_size))
 
     return "\n".join(output_lines) + ("\n" if text.endswith("\n") else "")
+
+
+def to_one_liner(query_or_text: str) -> str:
+    """Convert any TFQL query (expanded or single-line) into a single compact line for Todoist."""
+    return format_text(query_or_text, style="compact").strip()
+
+
+def copy_to_clipboard(text: str) -> bool:
+    """Copy text to macOS clipboard via pbcopy if available."""
+    try:
+        proc = subprocess.run(["pbcopy"], input=text.encode("utf-8"), check=True)
+        return proc.returncode == 0
+    except Exception:
+        return False
 
 
 def main() -> None:
@@ -331,13 +436,21 @@ def main() -> None:
     parser.add_argument("-w", "--write", action="store_true", help="Write formatted output directly to files in-place")
     parser.add_argument("-c", "--check", action="store_true", help="Check formatting without modifying files")
     parser.add_argument("--style", choices=["expanded", "compact"], default="expanded", help="Formatting style (default: expanded)")
+    parser.add_argument("-1", "--one-line", action="store_true", help="Convert to single-line compact format for Todoist UI")
+    parser.add_argument("--copy", action="store_true", help="Copy formatted result to clipboard (macOS pbcopy)")
     parser.add_argument("--indent", type=int, default=4, help="Indentation spaces (default: 4)")
     args = parser.parse_args()
 
+    style = "compact" if args.one_line else args.style
+
     if not args.files or args.files == ["-"]:
         input_text = sys.stdin.read()
-        formatted = format_text(input_text, style=args.style, indent_size=args.indent)
-        sys.stdout.write(formatted)
+        formatted = format_text(input_text, style=style, indent_size=args.indent)
+        if args.copy:
+            copy_to_clipboard(formatted.strip())
+            print("Copied to clipboard.")
+        else:
+            sys.stdout.write(formatted)
         return
 
     failed = False
@@ -349,9 +462,12 @@ def main() -> None:
             continue
 
         original = path.read_text(encoding="utf-8")
-        formatted = format_text(original, style=args.style, indent_size=args.indent)
+        formatted = format_text(original, style=style, indent_size=args.indent)
 
-        if args.check:
+        if args.copy:
+            copy_to_clipboard(formatted.strip())
+            print(f"Copied {path} as one-liner to clipboard.")
+        elif args.check:
             if original != formatted:
                 print(f"Requires formatting: {path}")
                 failed = True

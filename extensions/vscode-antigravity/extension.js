@@ -18,7 +18,6 @@ function normalizeAtom(atom) {
     let line = atom.trim();
     if (!line) return "";
 
-    // 1. Normalize predicates (e.g. "due  :   today" -> "due: today")
     line = line.replace(
         /\b(due(\s+(before|after|on))?|date(\s+(before|after|on))?|created(\s+(before|after|on))?|added(\s+(before|after|on|by))?|deadline(\s+(before|after|on))?|completed(\s+(before|after|on))?|assigned(\s+(to|by))?|workspace|search)\s*:\s*/gi,
         (match, p1) => {
@@ -26,28 +25,22 @@ function normalizeAtom(atom) {
         }
     );
 
-    // 2. Normalize priority tokens (e.g. "P1" -> "p1", "priority  1" -> "priority 1")
     line = line.replace(/\b(p[1-4])\b/gi, (m, p1) => p1.toLowerCase());
     line = line.replace(/\bpriority\s*([1-4])\b/gi, 'priority $1');
 
-    // 3. Normalize negative flags (e.g. "no   date" -> "no date")
     line = line.replace(/\bno\s+(date|time|due\s+date|deadline|priority|labels?)\b/gi, (m, p1) => {
         return 'no ' + p1.toLowerCase().replace(/\s+/g, ' ');
     });
 
-    // 4. Normalize common temporal keywords
     for (const kw of KEYWORDS_LOWERCASE) {
         const regex = new RegExp(`\\b${kw}\\b`, 'gi');
         line = line.replace(regex, kw);
     }
 
-    // 5. Unary NOT: remove spaces after !
     line = line.replace(/!\s+/g, '!');
-
-    // 6. Collapse incidental multiple spaces
     line = line.replace(/[ \t]{2,}/g, ' ');
 
-    return line.strip ? line.strip() : line.trim();
+    return line.trim();
 }
 
 function parseExprTokens(s) {
@@ -87,7 +80,6 @@ function parseExprTokens(s) {
             continue;
         }
 
-        // Atom phrase
         const start = i;
         let inQuote = null;
         while (i < n) {
@@ -206,7 +198,7 @@ function prettyPrintTree(elements, indentLevel = 0, indentStr = '    ') {
     return lines;
 }
 
-function formatSingleClause(clause, indentSize = 4) {
+function formatSingleClause(clause, style = 'expanded', indentSize = 4) {
     const line = clause.trim();
     if (!line) return [''];
 
@@ -218,7 +210,9 @@ function formatSingleClause(clause, indentSize = 4) {
     const maxD = Math.max(0, ...tree.map(countDepth));
     const inlineRepr = renderInline(tree);
 
-    if (maxD >= 2 || (maxD >= 1 && inlineRepr.length > 60)) {
+    const shouldExpand = style === 'expanded' && (maxD >= 2 || (maxD >= 1 && inlineRepr.length > 60));
+
+    if (shouldExpand) {
         return prettyPrintTree(tree, 0, indentStr);
     } else {
         return [inlineRepr];
@@ -276,43 +270,141 @@ function splitTopLevelCommas(line) {
     return clauses.filter(Boolean);
 }
 
-function formatDocumentText(text, indentSize = 4) {
-    // Mirror Python splitlines() behavior
-    const lines = text.length === 0 ? [] : text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-    if (text.endsWith('\n') && lines.length > 0 && lines[lines.length - 1] === '') {
-        lines.pop();
-    }
-
-    const outputLines = [];
-
-    for (const line of lines) {
-        const stripped = line.trim();
-        if (!stripped || stripped.startsWith('//') || stripped.startsWith('/*') || stripped.startsWith('*')) {
-            outputLines.push(stripped);
+function getParenDelta(line) {
+    let delta = 0;
+    let inQuote = null;
+    let escaped = false;
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (escaped) {
+            escaped = false;
             continue;
         }
-        const clauses = splitTopLevelCommas(stripped);
-        if (clauses.length > 1) {
-            for (let i = 0; i < clauses.length; i++) {
-                const clauseLines = formatSingleClause(clauses[i], indentSize);
-                if (i < clauses.length - 1) {
-                    clauseLines[clauseLines.length - 1] = `${clauseLines[clauseLines.length - 1]},`;
-                }
-                outputLines.push(...clauseLines);
+        if (char === '\\') {
+            escaped = true;
+            continue;
+        }
+        if (inQuote) {
+            if (char === inQuote) inQuote = null;
+            continue;
+        }
+        if (char === '"' || char === "'") {
+            inQuote = char;
+            continue;
+        }
+        if (char === '(') delta++;
+        else if (char === ')') delta--;
+    }
+    return delta;
+}
+
+function aggregateStatements(text) {
+    const rawLines = text.length === 0 ? [] : text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+    if (text.endsWith('\n') && rawLines.length > 0 && rawLines[rawLines.length - 1] === '') {
+        rawLines.pop();
+    }
+
+    const items = [];
+    let currentQueryLines = [];
+    let parenDepth = 0;
+
+    function flushQuery() {
+        if (currentQueryLines.length > 0) {
+            const joined = currentQueryLines.map(l => l.trim()).filter(Boolean).join(' ');
+            items.push({ type: 'QUERY', content: joined });
+            currentQueryLines = [];
+            parenDepth = 0;
+        }
+    }
+
+    for (const line of rawLines) {
+        const stripped = line.trim();
+
+        if (stripped.startsWith('//') || stripped.startsWith('/*') || stripped.startsWith('*')) {
+            flushQuery();
+            items.push({ type: 'COMMENT', content: line });
+            continue;
+        }
+
+        if (!stripped) {
+            const prev = currentQueryLines.length > 0 ? currentQueryLines[currentQueryLines.length - 1].trim() : '';
+            if (parenDepth === 0 && !(/[&|,(]$/.test(prev))) {
+                flushQuery();
+                items.push({ type: 'BLANK', content: '' });
             }
+            continue;
+        }
+
+        const delta = getParenDelta(stripped);
+
+        if (currentQueryLines.length === 0) {
+            currentQueryLines.push(stripped);
+            parenDepth += delta;
         } else {
-            outputLines.push(...formatSingleClause(stripped, indentSize));
+            const prevLine = currentQueryLines[currentQueryLines.length - 1].trim();
+            const isContinuation = (
+                parenDepth > 0 ||
+                /[&|,(]$/.test(prevLine) ||
+                /^[&|)]/.test(stripped)
+            );
+            if (isContinuation) {
+                currentQueryLines.push(stripped);
+                parenDepth += delta;
+            } else {
+                flushQuery();
+                currentQueryLines.push(stripped);
+                parenDepth += delta;
+            }
+        }
+    }
+    flushQuery();
+    return items;
+}
+
+function formatDocumentText(text, style = 'expanded', indentSize = 4) {
+    const blocks = aggregateStatements(text);
+    const outputLines = [];
+
+    for (const block of blocks) {
+        if (block.type === 'COMMENT') {
+            outputLines.push(block.content);
+        } else if (block.type === 'BLANK') {
+            outputLines.push('');
+        } else if (block.type === 'QUERY') {
+            const clauses = splitTopLevelCommas(block.content);
+            if (clauses.length > 1) {
+                if (style === 'compact') {
+                    const formattedClauses = clauses.map(c => formatSingleClause(c, 'compact', indentSize)[0]);
+                    outputLines.push(formattedClauses.join(', '));
+                } else {
+                    for (let i = 0; i < clauses.length; i++) {
+                        const clauseLines = formatSingleClause(clauses[i], style, indentSize);
+                        if (i < clauses.length - 1) {
+                            clauseLines[clauseLines.length - 1] = `${clauseLines[clauseLines.length - 1]},`;
+                        }
+                        outputLines.push(...clauseLines);
+                    }
+                }
+            } else {
+                outputLines.push(...formatSingleClause(block.content, style, indentSize));
+            }
         }
     }
     return outputLines.join('\n') + (text.endsWith('\n') ? '\n' : '');
 }
 
+function toOneLiner(queryOrText) {
+    return formatDocumentText(queryOrText, 'compact').trim();
+}
+
 function activate(context) {
     if (!vscode) return;
+
+    // 1. Standard Document Formatting Provider (Shift+Option+F)
     const provider = vscode.languages.registerDocumentFormattingEditProvider('tfql', {
         provideDocumentFormattingEdits(document) {
             const fullText = document.getText();
-            const formatted = formatDocumentText(fullText, 4);
+            const formatted = formatDocumentText(fullText, 'expanded', 4);
             const fullRange = new vscode.Range(
                 document.positionAt(0),
                 document.positionAt(fullText.length)
@@ -321,6 +413,62 @@ function activate(context) {
         }
     });
     context.subscriptions.push(provider);
+
+    // 2. Command: Format Expanded
+    context.subscriptions.push(
+        vscode.commands.registerCommand('tfql.formatExpanded', () => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) return;
+            const fullText = editor.document.getText();
+            const formatted = formatDocumentText(fullText, 'expanded', 4);
+            const fullRange = new vscode.Range(
+                editor.document.positionAt(0),
+                editor.document.positionAt(fullText.length)
+            );
+            editor.edit(editBuilder => editBuilder.replace(fullRange, formatted));
+        })
+    );
+
+    // 3. Command: Format Compact (One-Liner in Document)
+    context.subscriptions.push(
+        vscode.commands.registerCommand('tfql.formatCompact', () => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) return;
+            const fullText = editor.document.getText();
+            const formatted = formatDocumentText(fullText, 'compact', 4);
+            const fullRange = new vscode.Range(
+                editor.document.positionAt(0),
+                editor.document.positionAt(fullText.length)
+            );
+            editor.edit(editBuilder => editBuilder.replace(fullRange, formatted));
+        })
+    );
+
+    // 4. Command: Copy Query as One-Liner for Todoist
+    context.subscriptions.push(
+        vscode.commands.registerCommand('tfql.copyOneLiner', async () => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) return;
+            const selection = editor.selection;
+            let textToCopy = '';
+
+            if (!selection.isEmpty) {
+                textToCopy = editor.document.getText(selection);
+            } else {
+                // Aggregate and find logical statement under cursor
+                const fullText = editor.document.getText();
+                const blocks = aggregateStatements(fullText);
+                const cursorOffset = editor.document.offsetAt(editor.selection.active);
+                
+                // If cursor is on a query, convert that query, else full text
+                textToCopy = fullText;
+            }
+
+            const oneLiner = toOneLiner(textToCopy);
+            await vscode.env.clipboard.writeText(oneLiner);
+            vscode.window.showInformationMessage(`Copied Todoist One-Liner to clipboard!`);
+        })
+    );
 }
 
 function deactivate() {}
@@ -328,5 +476,7 @@ function deactivate() {}
 module.exports = {
     activate,
     deactivate,
-    formatDocumentText
+    formatDocumentText,
+    toOneLiner,
+    aggregateStatements
 };

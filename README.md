@@ -86,11 +86,14 @@ TFQL includes an auto-formatter that cleans up whitespace, line breaks, casing, 
 
 ---
 
-### How to Format
+### How to Format & Copy for Todoist
 
 #### 1. In Antigravity IDE / VS Code / Cursor
-- Press **`Shift + Option + F`** (macOS) or **`Shift + Alt + F`** (Windows / Linux).
-- Or enable auto-format on save in `settings.json`:
+- **Format Document (Expanded Tree):** Press **`Shift + Option + F`** (macOS) or **`Shift + Alt + F`** (Windows / Linux).
+- **Copy as One-Liner for Todoist:** Press **`Cmd + Option + C`** (macOS) / **`Ctrl + Alt + C`** (Windows/Linux) or **Right-Click > "TFQL: Copy Query as One-Liner for Todoist"**.
+  - Normalizes the active query into a single compact line with strict whitespace rules ready to paste directly into the Todoist filter UI.
+- **Convert to One-Liners (In-Place):** Run **`TFQL: Convert Document to One-Liners (Compact)`** via `Cmd + Shift + P`.
+- **Auto-format on save:** Add to `settings.json`:
   ```json
   "[tfql]": {
     "editor.formatOnSave": true
@@ -98,12 +101,20 @@ TFQL includes an auto-formatter that cleans up whitespace, line breaks, casing, 
   ```
 
 #### 2. In CotEditor
-- Press **`Control + Option + F`** (or select **Script > Format TFQL**).
+- **Format Document (Expanded Tree):** Press **`Control + Option + F`** (or select **Script > Format TFQL**).
+- **Copy as Todoist One-Liner:** Press **`Control + Option + C`** (or select **Script > Copy as Todoist One-Liner**).
+  - Automatically pipes the clean one-liner to macOS clipboard (`pbcopy`) and posts a system notification.
 
 #### 3. CLI (Terminal / Python)
 ```bash
-# Format files in-place
+# Format files in-place (expanded tree)
 python3 tools/formatter.py -w query.tfql
+
+# Convert to single-line compact format for Todoist
+python3 tools/formatter.py --one-line query.tfql
+
+# Convert to one-liner and copy directly to macOS clipboard
+python3 tools/formatter.py --one-line --copy query.tfql
 
 # Format from stdin (pipes / filters)
 cat query.tfql | python3 tools/formatter.py
