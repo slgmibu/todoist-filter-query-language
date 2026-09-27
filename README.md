@@ -51,7 +51,22 @@ While exact color shades depend on your active editor theme (e.g., *Dark+*, *Mon
 TFQL includes an auto-formatter that cleans up whitespace, line breaks, casing, and compound views.
 
 ### Style Rules Enforced:
-1. **Multi-View Query Splitting:** Comma-separated multi-view filters are split across lines so each list is readable at a glance:
+1. **Hierarchical 4-Space Tree Formatting (Leading Operators):** Complex nested parentheses are expanded into clear multi-line trees with 4 spaces per nesting level and leading operators (`&`, `|`). This prevents accidental vertical alignment of parentheses from different nesting levels:
+   ```tfql
+   // Complex nested query:
+   #Inbox
+   | (
+       (
+           (today & no time)
+           | due before: +1 hours
+           | overdue
+       )
+       & !(#Laundry & !/Backlog)
+       & !#Snoozed
+       & !(#Work & p4 & !/Daily+)
+   )
+   ```
+2. **Multi-View Query Splitting:** Comma-separated multi-view filters are split across lines so each list is readable at a glance:
    ```tfql
    // Before:
    today & overdue, p1 & no date, ##Work & /Urgent

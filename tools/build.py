@@ -61,7 +61,7 @@ def build_coteditor_bundle(grammar: dict[str, Any], dist_dir: Path) -> None:
             "description": "Syntax highlighting for Todoist Filter Query Language (TFQL)",
             "lastModified": "2026-09-27",
             "license": "MIT",
-            "version": "1.2.0"
+            "version": "1.3.0"
         }
     }
     (bundle_dir / "Info.json").write_text(json.dumps(info_payload, indent=2))
@@ -186,7 +186,7 @@ def sync_vscode_grammar(grammar_path: Path, ext_syntaxes_dir: Path) -> None:
 
 def package_vsix(ext_dir: Path, dist_dir: Path) -> Path:
     """Package the VS Code / Antigravity extension into a .vsix file."""
-    vsix_path = dist_dir / "todoist-filter-query-language-1.2.0.vsix"
+    vsix_path = dist_dir / "todoist-filter-query-language-1.3.0.vsix"
     try:
         cmd = [
             "npx", "--yes", "@vscode/vsce", "package",

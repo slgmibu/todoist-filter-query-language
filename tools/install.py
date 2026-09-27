@@ -86,7 +86,7 @@ def install() -> None:
     build_script = root / "tools" / "build.py"
     subprocess.run([sys.executable, str(build_script)], check=True)
 
-    vsix_path = dist_dir / "todoist-filter-query-language-1.2.0.vsix"
+    vsix_path = dist_dir / "todoist-filter-query-language-1.3.0.vsix"
 
     print("\n==> Deploying to detected editors:")
     if vsix_path.exists():

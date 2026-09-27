@@ -1,8 +1,9 @@
 r"""TFQL Code Formatter.
 
 Enforces an opinionated, clean coding style for Todoist Filter Query Language (TFQL):
+- Hierarchical multi-line tree formatting for nested parentheses (4 spaces indent, leading operators)
 - Normalized spacing around binary operators (&, |) and unary (!)
-- Preserves escaped characters (e.g. #One \& Two)
+- Preserves escaped characters (e.g. #One \& Two) and string literals (e.g. search: "...")
 - Consistent predicate colon formatting (0 before, 1 after)
 - Top-level comma splitting (compound multi-views on separate lines)
 - Normalized parentheses padding and keyword casing (p1..p4, today, overdue)
@@ -15,6 +16,7 @@ import argparse
 import re
 import sys
 from pathlib import Path
+from typing import Any, List, Tuple
 
 
 KEYWORDS_LOWERCASE = {
@@ -29,9 +31,9 @@ KEYWORDS_LOWERCASE = {
 }
 
 
-def format_single_clause(clause: str) -> str:
-    """Format an individual filter query clause."""
-    line = clause.strip()
+def normalize_atom(atom: str) -> str:
+    """Normalize predicates, priorities, and keywords in an atomic clause."""
+    line = atom.strip()
     if not line:
         return ""
 
@@ -43,7 +45,7 @@ def format_single_clause(clause: str) -> str:
     )
     line = pred_regex.sub(lambda m: f"{' '.join(m.group(1).lower().split())}: ", line)
 
-    # 2. Normalize priority tokens (e.g. "P1" -> "p1", "priority  1" -> "priority 1")
+    # 2. Normalize priority tokens (p1..p4)
     line = re.sub(r"(?i)\b(p[1-4])\b", lambda m: m.group(1).lower(), line)
     line = re.sub(r"(?i)\bpriority\s*([1-4])\b", r"priority \1", line)
 
@@ -58,23 +60,190 @@ def format_single_clause(clause: str) -> str:
     for kw in KEYWORDS_LOWERCASE:
         line = re.sub(rf"(?i)\b{re.escape(kw)}\b", kw, line)
 
-    # 5. Normalize operators: unary ! (no space after), binary & and | (1 space around, ignore escaped \&)
-    line = re.sub(r"(?<!\\)\s*([&|])\s*", r" \1 ", line)
+    # 5. Unary NOT normalization: ensure no space between ! and the identifier/word
     line = re.sub(r"!\s+", "!", line)
 
-    # 6. Normalize parentheses padding: "( query )" -> "(query)"
-    line = re.sub(r"\(\s+", "(", line)
-    line = re.sub(r"\s+\)", ")", line)
-
-    # Ensure space before opening parenthesis if preceded by word/symbol other than ! or (
-    line = re.sub(r"([^\s!(])\(", r"\1 (", line)
-    # Ensure space after closing parenthesis if followed by word/symbol other than ) or ,
-    line = re.sub(r"\)([^\s),])", r") \1", line)
-
-    # Collapse any incidental multiple spaces
+    # Collapse multiple incidental spaces (except inside quotes which are handled upstream)
     line = re.sub(r"[ \t]{2,}", " ", line)
 
     return line.strip()
+
+
+def parse_expr_tokens(s: str) -> list[tuple[str, str]]:
+    """Tokenize query into operators, parentheses, and atomic phrases.
+    
+    Correctly recognizes string literals and escaped characters.
+    """
+    tokens: list[tuple[str, str]] = []
+    i = 0
+    n = len(s)
+    while i < n:
+        if s[i].isspace():
+            i += 1
+            continue
+        if s[i] in "&|":
+            tokens.append(("OP", s[i]))
+            i += 1
+            continue
+        if s[i] == "!":
+            # Check if this negates a parenthesized group, e.g. !(...) or ! (...)
+            j = i + 1
+            while j < n and s[j].isspace():
+                j += 1
+            if j < n and s[j] == "(":
+                tokens.append(("NOT_GROUP", "!"))
+                i = j  # next loop iteration will process '('
+                continue
+            # If not a parenthesized group, fall through to atom parsing
+
+        if s[i] == "(":
+            tokens.append(("LPAREN", "("))
+            i += 1
+            continue
+        if s[i] == ")":
+            tokens.append(("RPAREN", ")"))
+            i += 1
+            continue
+
+        # Atom / predicate phrase
+        start = i
+        in_quote: str | None = None
+        while i < n:
+            if in_quote:
+                if s[i] == "\\" and i + 1 < n:
+                    i += 2
+                    continue
+                if s[i] == in_quote:
+                    in_quote = None
+                i += 1
+                continue
+
+            if s[i] in ('"', "'"):
+                in_quote = s[i]
+                i += 1
+                continue
+
+            if s[i] == "\\" and i + 1 < n:
+                i += 2
+                continue
+
+            if s[i] in "&|()":
+                break
+            i += 1
+
+        tokens.append(("ATOM", normalize_atom(s[start:i])))
+    return tokens
+
+
+def parse_tree(tokens: list[tuple[str, str]], idx: int = 0) -> tuple[list[Any], int]:
+    """Parse tokens into nested group tree."""
+    elements: list[Any] = []
+    prefix = ""
+    while idx < len(tokens):
+        t_type, val = tokens[idx]
+        if t_type == "LPAREN":
+            sub, idx = parse_tree(tokens, idx + 1)
+            elements.append((prefix + "(", sub))
+            prefix = ""
+        elif t_type == "NOT_GROUP":
+            prefix = "!"
+            idx += 1
+        elif t_type == "RPAREN":
+            return elements, idx + 1
+        else:
+            elements.append((t_type, val))
+            idx += 1
+    return elements, idx
+
+
+def count_depth(item: Any) -> int:
+    """Calculate maximum nesting depth of an element."""
+    if isinstance(item, tuple) and item[0] in ("(", "!("):
+        return 1 + max((count_depth(x) for x in item[1]), default=0)
+    return 0
+
+
+def render_inline(elements: list[Any]) -> str:
+    """Render elements as a single normalized line."""
+    res: list[str] = []
+    for el in elements:
+        if isinstance(el, tuple) and el[0] in ("(", "!("):
+            res.append(f"{el[0]}{render_inline(el[1])})")
+        elif el[0] == "OP":
+            res.append(f" {el[1]} ")
+        else:
+            res.append(el[1])
+    return "".join(res).strip()
+
+
+def pretty_print_tree(
+    elements: list[Any],
+    indent_level: int = 0,
+    indent_str: str = "    "
+) -> list[str]:
+    """Pretty print group tree with 4-space indents and leading operators."""
+    lines: list[str] = []
+    current_op = ""
+    i = 0
+    while i < len(elements):
+        el = elements[i]
+        if el[0] == "OP":
+            current_op = el[1]
+            i += 1
+            continue
+
+        prefix = f"{current_op} " if current_op else ""
+        current_op = ""
+
+        if isinstance(el, tuple) and el[0] in ("(", "!("):
+            group_type = el[0]
+            sub = el[1]
+            inline_str = render_inline(sub)
+            depth = count_depth(el)
+
+            # Compact inline heuristic: keep leaf groups inline if depth <= 1 and simple
+            is_simple_leaf = (
+                depth <= 1 and len(inline_str) < 45 and
+                not any(x[0] == "OP" and x[1] == "|" for x in sub if count_depth(x) > 0)
+            )
+
+            if is_simple_leaf:
+                lines.append(f"{indent_str * indent_level}{prefix}{group_type}{inline_str})")
+            else:
+                lines.append(f"{indent_str * indent_level}{prefix}{group_type}")
+                sub_lines = pretty_print_tree(sub, indent_level + 1, indent_str)
+                lines.extend(sub_lines)
+                lines.append(f"{indent_str * indent_level})")
+        else:
+            lines.append(f"{indent_str * indent_level}{prefix}{el[1]}")
+        i += 1
+    return lines
+
+
+def format_single_clause(clause: str, style: str = "expanded", indent_size: int = 4) -> list[str]:
+    """Format an individual filter query clause into one or more lines."""
+    line = clause.strip()
+    if not line:
+        return [""]
+
+    tokens = parse_expr_tokens(line)
+    if not tokens:
+        return [""]
+
+    tree, _ = parse_tree(tokens)
+    indent_str = " " * indent_size
+    max_d = max((count_depth(x) for x in tree), default=0)
+    inline_repr = render_inline(tree)
+
+    # Expand into multi-line tree if:
+    # 1. Nested parentheses exist (max_d >= 2), or
+    # 2. Contains groups (max_d >= 1) and length exceeds 60 characters
+    should_expand = style == "expanded" and (max_d >= 2 or (max_d >= 1 and len(inline_repr) > 60))
+
+    if should_expand:
+        return pretty_print_tree(tree, 0, indent_str)
+    else:
+        return [inline_repr]
 
 
 def split_top_level_commas(line: str) -> list[str]:
@@ -129,7 +298,7 @@ def split_top_level_commas(line: str) -> list[str]:
     return [c for c in clauses if c]
 
 
-def format_text(text: str) -> str:
+def format_text(text: str, style: str = "expanded", indent_size: int = 4) -> str:
     """Format full TFQL document text."""
     lines = text.splitlines()
     output_lines: list[str] = []
@@ -145,13 +314,12 @@ def format_text(text: str) -> str:
         clauses = split_top_level_commas(stripped)
         if len(clauses) > 1:
             for i, clause in enumerate(clauses):
-                formatted = format_single_clause(clause)
+                clause_lines = format_single_clause(clause, style=style, indent_size=indent_size)
                 if i < len(clauses) - 1:
-                    output_lines.append(f"{formatted},")
-                else:
-                    output_lines.append(formatted)
+                    clause_lines[-1] = f"{clause_lines[-1]},"
+                output_lines.extend(clause_lines)
         else:
-            output_lines.append(format_single_clause(stripped))
+            output_lines.extend(format_single_clause(stripped, style=style, indent_size=indent_size))
 
     return "\n".join(output_lines) + ("\n" if text.endswith("\n") else "")
 
@@ -161,12 +329,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Opinionated code formatter for Todoist Filter Query Language (TFQL)")
     parser.add_argument("files", nargs="*", help="Files to format (reads stdin if omitted or '-')")
     parser.add_argument("-w", "--write", action="store_true", help="Write formatted output directly to files in-place")
-    parser.add_argument("-c", "--check", action="store_true", help="Check formatting without modifying files (exits 1 if unformatted)")
+    parser.add_argument("-c", "--check", action="store_true", help="Check formatting without modifying files")
+    parser.add_argument("--style", choices=["expanded", "compact"], default="expanded", help="Formatting style (default: expanded)")
+    parser.add_argument("--indent", type=int, default=4, help="Indentation spaces (default: 4)")
     args = parser.parse_args()
 
     if not args.files or args.files == ["-"]:
         input_text = sys.stdin.read()
-        formatted = format_text(input_text)
+        formatted = format_text(input_text, style=args.style, indent_size=args.indent)
         sys.stdout.write(formatted)
         return
 
@@ -179,7 +349,7 @@ def main() -> None:
             continue
 
         original = path.read_text(encoding="utf-8")
-        formatted = format_text(original)
+        formatted = format_text(original, style=args.style, indent_size=args.indent)
 
         if args.check:
             if original != formatted:

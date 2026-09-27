@@ -2,7 +2,7 @@
   "name": "todoist-filter-query-language",
   "displayName": "Todoist Filter Queries (TFQL)",
   "description": "Syntax highlighting and auto-formatting for Todoist Filter Query Language (TFQL / .tdq / .tfql)",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "publisher": "antigravity",
   "main": "./extension.js",
   "activationEvents": [
