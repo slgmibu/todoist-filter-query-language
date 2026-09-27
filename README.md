@@ -3,10 +3,10 @@
 Multi-editor syntax highlighting and language definition for **Todoist Filter Queries** (TFQL).
 
 Cross-platform support for:
-- **Antigravity IDE**
-- **Visual Studio Code / Cursor**
-- **CotEditor**
-- **Sublime Text / TextMate**
+- **Antigravity IDE** (macOS, Linux, Windows)
+- **Visual Studio Code / Cursor** (macOS, Linux, Windows)
+- **CotEditor** (macOS)
+- **Sublime Text / TextMate** (macOS, Linux, Windows)
 
 ---
 
@@ -50,22 +50,34 @@ todoist-filter-query-language/
 │   └── coteditor/
 │       └── TFQL.cotsyntax/           # Compiled CotEditor bundle
 ├── tools/
-│   └── build.py                      # Compiler: TextMate grammar -> CotEditor bundle
+│   ├── build.py                      # Compiler: TextMate grammar -> CotEditor bundle
+│   └── install.py                    # Cross-platform installer engine (macOS, Linux, Windows)
 ├── test/
 │   └── example.tfql                  # Test suite
-└── install.sh                        # Universal local installer
+├── install.sh                        # macOS / Linux installer
+├── install.ps1                       # Windows PowerShell installer
+└── README.md
 ```
 
 ---
 
 ## Installation
 
-Run the universal installer:
+The installer automatically detects your operating system and deploys to all installed editors.
+
+### macOS & Linux
 ```bash
 ./install.sh
+# or: python3 tools/install.py
 ```
 
-This compiles the latest grammar and deploys to:
-1. CotEditor (`~/Library/Application Support/CotEditor/Syntaxes/TFQL.cotsyntax`)
-2. Antigravity IDE (`~/.antigravity/extensions/todoist-filter-query-language`)
-3. VS Code (`~/.vscode/extensions/todoist-filter-query-language`)
+### Windows (PowerShell)
+```powershell
+.\install.ps1
+# or: python tools\install.py
+```
+
+### What gets deployed:
+- **macOS:** CotEditor (`~/Library/Application Support/CotEditor/Syntaxes`), Antigravity IDE, VS Code, Cursor.
+- **Linux:** Antigravity IDE, VS Code, Cursor (`~/.<editor>/extensions`).
+- **Windows:** Antigravity IDE, VS Code, Cursor (`%USERPROFILE%\.<editor>\extensions`).
