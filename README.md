@@ -10,6 +10,42 @@ Cross-platform support for:
 
 ---
 
+## Color & Semantic Meaning
+
+While exact color shades depend on your active editor theme (e.g., *Dark+*, *Monokai*, *GitHub Dark*, or CotEditor *Pulse*), TFQL systematically maps every element of a query to standard semantic grammar categories.
+
+### Semantic Color Guide
+
+| Category | Typical Dark Theme Color | Syntax Examples | What It Means in Todoist |
+| :--- | :--- | :--- | :--- |
+| **Projects & Hierarchies** | **Teal / Cyan / Bright Green** | `#Work`, `##Personal`, `#"Client Alpha"`, `#Welcome 👋` | Project and sub-project scope filters (`#` = project only, `##` = project + all sub-projects). |
+| **Sections** | **Blue / Indigo** | `/Inbox`, `/Current Sprint`, `/*`, `/Sprint 🚀` | Section containers within projects. `/*` matches any section; `!/*` matches unsectioned tasks. |
+| **Labels** | **Light Blue / Sky Blue** | `@urgent`, `@"follow up"`, `%email`, `%home*` | Task labels and tags (supports both `@` and `%` prefixes, plus wildcards). |
+| **Predicates & Keys** | **Purple / Magenta / Lavender** | `due:`, `due before:`, `created:`, `assigned to:`, `workspace:`, `search:` | Query operators defining which task attribute to evaluate. |
+| **Logical Operators** | **Pink / Red / Rose** | `&`, `\|`, `!`, `and`, `or`, `not` | Boolean algebra connecting conditions (`&` = AND, `\|` = OR, `!` = NOT). |
+| **List Separator** | **Muted White / Grey** | `,` | Separates compound queries into distinct sections/lists within a single view. |
+| **Priorities & Numbers** | **Light Green / Olive** | `p1`, `p2`, `p3`, `p4`, `priority 1`..`4`, `+7d`, `14 days`, `2026-10-01` | Priority levels, numeric durations, offsets, and calendar dates. |
+| **Temporal Constants** | **Blue / Violet / Cyan** | `today`, `tomorrow`, `yesterday`, `mon`..`sun`, `jan`..`dec`, `first day` | Relative date words, weekdays, calendar months, and time units. |
+| **Assignee Constants** | **Blue / Violet** | `me`, `others` | Built-in target identities used with `assigned to:` or `added by:`. |
+| **Status Flags** | **Purple / Violet** | `shared`, `assigned`, `subtask`, `uncompletable`, `recurring`, `overdue`, `od`, `view all` | Built-in boolean status filters and task properties. |
+| **Negative Flags** | **Purple / Orange** | `no date`, `no time`, `no due date`, `no deadline`, `no priority`, `no labels` | Explicit exclusions for missing attributes. |
+| **Search Strings** | **Orange / Amber / Red-Brown** | `"quarterly review"`, `'deployment notes'` | Exact search phrases evaluated within task names and descriptions. |
+| **Comments & Headers** | **Muted Grey / Forest Green** | `// Daily Dashboard`, `/* notes */` | Explanatory titles; single-line comments populate the editor's document outline. |
+
+---
+
+### Example Query Breakdown
+
+```tfql
+// Daily priority dashboard
+(today | overdue) & #Work & /Sprint 🚀 & @urgent & p1,
+ └────┬─────────┘   └─┬──┘   └───┬────┘   └──┬───┘  └┬┘ └┬┘
+   Temporal        Project    Section      Label    Pri  Multi-view
+   Constants       (types)   (commands) (variables)         Divider
+```
+
+---
+
 ## Language Specifications
 
 ### Supported File Extensions
@@ -23,8 +59,8 @@ Cross-platform support for:
 | :--- | :--- | :--- | :--- |
 | **Projects** | `#Work`, `##Personal`, `#"Client Alpha"` | `entity.name.type.project` | `types` |
 | **Sections** | `/Inbox`, `/Current Sprint`, `/*` | `entity.name.section` | `commands` |
-| **Labels** | `@urgent`, `@"follow up"`, `no label` | `variable.other.label` | `variables` |
-| **Predicates** | `due:`, `due before:`, `created:`, `assigned to:`, `search:` | `keyword.control.predicate` | `attributes` |
+| **Labels** | `@urgent`, `@"follow up"`, `%email` | `variable.other.label` | `variables` |
+| **Predicates** | `due:`, `due before:`, `created:`, `assigned to:`, `workspace:`, `search:` | `keyword.control.predicate` | `attributes` |
 | **Logical Operators**| `&`, `\|`, `!`, `and`, `or`, `not` | `keyword.operator.logical` | `keywords` |
 | **Compound Divider** | `,` | `punctuation.separator.query` | `keywords` |
 | **Priorities** | `p1`..`p4`, `priority 1`..`4` | `constant.numeric.priority` | `numbers` |
