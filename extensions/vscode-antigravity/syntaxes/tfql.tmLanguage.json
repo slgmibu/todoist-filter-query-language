@@ -1,0 +1,220 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Todoist Filter Query Language",
+  "scopeName": "source.tfql",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#predicates" },
+    { "include": "#projects" },
+    { "include": "#sections" },
+    { "include": "#labels" },
+    { "include": "#operators" },
+    { "include": "#priorities" },
+    { "include": "#flags" },
+    { "include": "#dates" },
+    { "include": "#temporals" },
+    { "include": "#parentheses" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.tfql",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.tfql",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.tfql",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.tfql",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.tfql",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.tfql",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "predicates": {
+      "patterns": [
+        {
+          "name": "keyword.control.predicate.due.tfql",
+          "match": "(?i)\\b(due(\\s+(before|after|on))?):"
+        },
+        {
+          "name": "keyword.control.predicate.created.tfql",
+          "match": "(?i)\\b(created(\\s+(before|after|on))?):"
+        },
+        {
+          "name": "keyword.control.predicate.added.tfql",
+          "match": "(?i)\\b(added(\\s+(before|after|on))?):"
+        },
+        {
+          "name": "keyword.control.predicate.deadline.tfql",
+          "match": "(?i)\\b(deadline(\\s+(before|after|on))?):"
+        },
+        {
+          "name": "keyword.control.predicate.completed.tfql",
+          "match": "(?i)\\b(completed(\\s+(before|after|on))?):"
+        },
+        {
+          "name": "keyword.control.predicate.assigned.tfql",
+          "match": "(?i)\\b(assigned(\\s+(to|by))?):"
+        },
+        {
+          "name": "keyword.control.predicate.search.tfql",
+          "match": "(?i)\\bsearch:"
+        }
+      ]
+    },
+    "projects": {
+      "patterns": [
+        {
+          "name": "entity.name.type.project.parent.tfql",
+          "match": "##(\"[^\"]+\"|[a-zA-Z0-9_\\-\\.\\*]+)"
+        },
+        {
+          "name": "entity.name.type.project.tfql",
+          "match": "#(\"[^\"]+\"|[a-zA-Z0-9_\\-\\.\\*]+)"
+        }
+      ]
+    },
+    "sections": {
+      "patterns": [
+        {
+          "name": "entity.name.section.tfql",
+          "match": "/(\"[^\"]+\"|[a-zA-Z0-9_\\-\\.\\*]+)"
+        }
+      ]
+    },
+    "labels": {
+      "patterns": [
+        {
+          "name": "variable.other.label.tfql",
+          "match": "@(\"[^\"]+\"|[a-zA-Z0-9_\\-\\.\\*]+)"
+        },
+        {
+          "name": "keyword.other.flag.no-label.tfql",
+          "match": "(?i)\\bno\\s+labels?\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.logical.tfql",
+          "match": "[&|!]"
+        },
+        {
+          "name": "keyword.operator.logical.word.tfql",
+          "match": "(?i)\\b(and|or|not)\\b"
+        },
+        {
+          "name": "punctuation.separator.query.tfql",
+          "match": ","
+        }
+      ]
+    },
+    "priorities": {
+      "patterns": [
+        {
+          "name": "constant.numeric.priority.tfql",
+          "match": "(?i)\\b(p[1-4])\\b"
+        },
+        {
+          "name": "constant.numeric.priority.named.tfql",
+          "match": "(?i)\\bpriority\\s*[1-4]\\b"
+        }
+      ]
+    },
+    "flags": {
+      "patterns": [
+        {
+          "name": "keyword.other.flag.status.tfql",
+          "match": "(?i)\\b(shared|assigned|subtask|recurring|overdue|all)\\b"
+        },
+        {
+          "name": "keyword.other.flag.view-all.tfql",
+          "match": "(?i)\\bview\\s+all\\b"
+        },
+        {
+          "name": "keyword.other.flag.negative.tfql",
+          "match": "(?i)\\bno\\s+(date|time|due\\s+date|priority)\\b"
+        }
+      ]
+    },
+    "dates": {
+      "patterns": [
+        {
+          "name": "constant.numeric.duration.tfql",
+          "match": "(?i)[+-]?\\d+\\s*(d|days?|w|weeks?|m|months?|y|years?|h|hours?)\\b"
+        },
+        {
+          "name": "constant.numeric.date.iso.tfql",
+          "match": "\\b\\d{4}-\\d{2}-\\d{2}\\b"
+        },
+        {
+          "name": "constant.numeric.date.short.tfql",
+          "match": "\\b\\d{1,2}/\\d{1,2}(/\\d{2,4})?\\b"
+        }
+      ]
+    },
+    "temporals": {
+      "patterns": [
+        {
+          "name": "constant.language.temporal.day.tfql",
+          "match": "(?i)\\b(today|tomorrow|yesterday|now)\\b"
+        },
+        {
+          "name": "keyword.operator.temporal.relation.tfql",
+          "match": "(?i)\\b(next|past|last|before|after|starting|ending|until)\\b"
+        },
+        {
+          "name": "constant.language.temporal.weekday.tfql",
+          "match": "(?i)\\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun)\\b"
+        },
+        {
+          "name": "constant.language.temporal.month.tfql",
+          "match": "(?i)\\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\\b"
+        },
+        {
+          "name": "constant.language.target.user.tfql",
+          "match": "(?i)\\b(me|others)\\b"
+        }
+      ]
+    },
+    "parentheses": {
+      "patterns": [
+        {
+          "name": "punctuation.section.parens.begin.tfql",
+          "match": "\\("
+        },
+        {
+          "name": "punctuation.section.parens.end.tfql",
+          "match": "\\)"
+        }
+      ]
+    }
+  }
+}

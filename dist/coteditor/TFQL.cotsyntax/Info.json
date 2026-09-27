@@ -1,0 +1,17 @@
+{
+  "fileMap": {
+    "extensions": [
+      "tfql",
+      "tdq",
+      "todoist"
+    ]
+  },
+  "kind": "code",
+  "metadata": {
+    "author": "Antigravity",
+    "description": "Syntax highlighting for Todoist Filter Query Language (TFQL)",
+    "lastModified": "2026-09-27",
+    "license": "MIT",
+    "version": "1.0.0"
+  }
+}

@@ -1,0 +1,215 @@
+{
+  "attributes": [
+    {
+      "begin": "\\b(due(\\s+(before|after|on))?):",
+      "description": "keyword.control.predicate.due.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
+      "begin": "\\b(created(\\s+(before|after|on))?):",
+      "description": "keyword.control.predicate.created.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
+      "begin": "\\b(added(\\s+(before|after|on))?):",
+      "description": "keyword.control.predicate.added.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
+      "begin": "\\b(deadline(\\s+(before|after|on))?):",
+      "description": "keyword.control.predicate.deadline.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
+      "begin": "\\b(completed(\\s+(before|after|on))?):",
+      "description": "keyword.control.predicate.completed.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
+      "begin": "\\b(assigned(\\s+(to|by))?):",
+      "description": "keyword.control.predicate.assigned.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
+      "begin": "\\bsearch:",
+      "description": "keyword.control.predicate.search.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    }
+  ],
+  "characters": [
+    {
+      "begin": "\\(",
+      "description": "punctuation.section.parens.begin.tfql",
+      "regularExpression": true
+    },
+    {
+      "begin": "\\)",
+      "description": "punctuation.section.parens.end.tfql",
+      "regularExpression": true
+    }
+  ],
+  "commands": [
+    {
+      "begin": "/(\"[^\"]+\"|[a-zA-Z0-9_\\-\\.\\*]+)",
+      "description": "entity.name.section.tfql",
+      "regularExpression": true
+    }
+  ],
+  "comments": [
+    {
+      "begin": "//.*$",
+      "description": "comment.line.double-slash.tfql",
+      "regularExpression": true
+    }
+  ],
+  "keywords": [
+    {
+      "begin": "/\\*",
+      "end": "\\*/",
+      "description": "comment.block.tfql",
+      "regularExpression": true
+    },
+    {
+      "begin": "\\bno\\s+labels?\\b",
+      "description": "keyword.other.flag.no-label.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
+      "begin": "[&|!]",
+      "description": "keyword.operator.logical.tfql",
+      "regularExpression": true
+    },
+    {
+      "begin": "\\b(and|or|not)\\b",
+      "description": "keyword.operator.logical.word.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
+      "begin": ",",
+      "description": "punctuation.separator.query.tfql",
+      "regularExpression": true
+    },
+    {
+      "begin": "\\b(shared|assigned|subtask|recurring|overdue|all)\\b",
+      "description": "keyword.other.flag.status.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
+      "begin": "\\bview\\s+all\\b",
+      "description": "keyword.other.flag.view-all.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
+      "begin": "\\bno\\s+(date|time|due\\s+date|priority)\\b",
+      "description": "keyword.other.flag.negative.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
+      "begin": "\\b(next|past|last|before|after|starting|ending|until)\\b",
+      "description": "keyword.operator.temporal.relation.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    }
+  ],
+  "numbers": [
+    {
+      "begin": "\\b(p[1-4])\\b",
+      "description": "constant.numeric.priority.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
+      "begin": "\\bpriority\\s*[1-4]\\b",
+      "description": "constant.numeric.priority.named.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
+      "begin": "[+-]?\\d+\\s*(d|days?|w|weeks?|m|months?|y|years?|h|hours?)\\b",
+      "description": "constant.numeric.duration.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
+      "begin": "\\b\\d{4}-\\d{2}-\\d{2}\\b",
+      "description": "constant.numeric.date.iso.tfql",
+      "regularExpression": true
+    },
+    {
+      "begin": "\\b\\d{1,2}/\\d{1,2}(/\\d{2,4})?\\b",
+      "description": "constant.numeric.date.short.tfql",
+      "regularExpression": true
+    }
+  ],
+  "strings": [
+    {
+      "begin": "\"",
+      "end": "\"",
+      "description": "string.quoted.double.tfql",
+      "regularExpression": true
+    },
+    {
+      "begin": "'",
+      "end": "'",
+      "description": "string.quoted.single.tfql",
+      "regularExpression": true
+    }
+  ],
+  "types": [
+    {
+      "begin": "##(\"[^\"]+\"|[a-zA-Z0-9_\\-\\.\\*]+)",
+      "description": "entity.name.type.project.parent.tfql",
+      "regularExpression": true
+    },
+    {
+      "begin": "#(\"[^\"]+\"|[a-zA-Z0-9_\\-\\.\\*]+)",
+      "description": "entity.name.type.project.tfql",
+      "regularExpression": true
+    }
+  ],
+  "values": [
+    {
+      "begin": "\\b(today|tomorrow|yesterday|now)\\b",
+      "description": "constant.language.temporal.day.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
+      "begin": "\\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun)\\b",
+      "description": "constant.language.temporal.weekday.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
+      "begin": "\\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\\b",
+      "description": "constant.language.temporal.month.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
+      "begin": "\\b(me|others)\\b",
+      "description": "constant.language.target.user.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    }
+  ],
+  "variables": [
+    {
+      "begin": "@(\"[^\"]+\"|[a-zA-Z0-9_\\-\\.\\*]+)",
+      "description": "variable.other.label.tfql",
+      "regularExpression": true
+    }
+  ]
+}

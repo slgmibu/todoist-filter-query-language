@@ -1,0 +1,39 @@
+{
+  "name": "todoist-filter-query-language",
+  "displayName": "Todoist Filter Queries (TFQL)",
+  "description": "Syntax highlighting for Todoist Filter Query Language (TFQL / .tdq / .tfql)",
+  "version": "1.0.0",
+  "publisher": "antigravity",
+  "engines": {
+    "vscode": "^1.70.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "tfql",
+        "aliases": [
+          "Todoist Filter Query",
+          "TFQL",
+          "Todoist Query Language",
+          "tdq"
+        ],
+        "extensions": [
+          ".tfql",
+          ".tdq",
+          ".todoist"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "tfql",
+        "scopeName": "source.tfql",
+        "path": "./syntaxes/tfql.tmLanguage.json"
+      }
+    ]
+  }
+}

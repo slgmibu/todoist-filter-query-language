@@ -1,0 +1,8 @@
+[
+  {
+    "description": "Filter query group / section",
+    "kind": "heading",
+    "pattern": "^\\s*//\\s*(.+)$",
+    "template": "$1"
+  }
+]

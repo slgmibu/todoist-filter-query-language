@@ -1,0 +1,106 @@
+[
+  {
+    "text": "assigned to:",
+    "type": "attributes"
+  },
+  {
+    "text": "assigned by:",
+    "type": "attributes"
+  },
+  {
+    "text": "due:",
+    "type": "attributes"
+  },
+  {
+    "text": "due before:",
+    "type": "attributes"
+  },
+  {
+    "text": "due after:",
+    "type": "attributes"
+  },
+  {
+    "text": "created:",
+    "type": "attributes"
+  },
+  {
+    "text": "created before:",
+    "type": "attributes"
+  },
+  {
+    "text": "created after:",
+    "type": "attributes"
+  },
+  {
+    "text": "deadline:",
+    "type": "attributes"
+  },
+  {
+    "text": "search:",
+    "type": "attributes"
+  },
+  {
+    "text": "today",
+    "type": "values"
+  },
+  {
+    "text": "tomorrow",
+    "type": "values"
+  },
+  {
+    "text": "yesterday",
+    "type": "values"
+  },
+  {
+    "text": "overdue",
+    "type": "keywords"
+  },
+  {
+    "text": "recurring",
+    "type": "keywords"
+  },
+  {
+    "text": "subtask",
+    "type": "keywords"
+  },
+  {
+    "text": "shared",
+    "type": "keywords"
+  },
+  {
+    "text": "no date",
+    "type": "keywords"
+  },
+  {
+    "text": "no time",
+    "type": "keywords"
+  },
+  {
+    "text": "no priority",
+    "type": "keywords"
+  },
+  {
+    "text": "no label",
+    "type": "variables"
+  },
+  {
+    "text": "view all",
+    "type": "keywords"
+  },
+  {
+    "text": "p1",
+    "type": "numbers"
+  },
+  {
+    "text": "p2",
+    "type": "numbers"
+  },
+  {
+    "text": "p3",
+    "type": "numbers"
+  },
+  {
+    "text": "p4",
+    "type": "numbers"
+  }
+]
