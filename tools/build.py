@@ -2,13 +2,15 @@
 
 Compiles the master TextMate grammar (grammar/tfql.tmLanguage.json)
 into editor-specific distribution bundles:
-- Visual Studio Code / Antigravity IDE extension assets
+- Visual Studio Code / Antigravity IDE extension assets & VSIX package
 - CotEditor syntax bundle (dist/coteditor/TFQL.cotsyntax)
 """
 
 from __future__ import annotations
 
 import json
+import shutil
+import subprocess
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -59,7 +61,7 @@ def build_coteditor_bundle(grammar: dict[str, Any], dist_dir: Path) -> None:
             "description": "Syntax highlighting for Todoist Filter Query Language (TFQL)",
             "lastModified": "2026-09-27",
             "license": "MIT",
-            "version": "1.1.0"
+            "version": "1.2.0"
         }
     }
     (bundle_dir / "Info.json").write_text(json.dumps(info_payload, indent=2))
@@ -182,12 +184,29 @@ def sync_vscode_grammar(grammar_path: Path, ext_syntaxes_dir: Path) -> None:
     print(f"✓ VS Code / Antigravity grammar synced to: {target}")
 
 
+def package_vsix(ext_dir: Path, dist_dir: Path) -> Path:
+    """Package the VS Code / Antigravity extension into a .vsix file."""
+    vsix_path = dist_dir / "todoist-filter-query-language-1.2.0.vsix"
+    try:
+        cmd = [
+            "npx", "--yes", "@vscode/vsce", "package",
+            "--skip-license", "--allow-missing-repository",
+            "-o", str(vsix_path)
+        ]
+        subprocess.run(cmd, cwd=ext_dir, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print(f"✓ Packaged VSIX at: {vsix_path}")
+    except Exception as err:
+        print(f"Notice: vsce packaging skipped or failed: {err}")
+    return vsix_path
+
+
 def main() -> None:
     """Entrypoint for compilation."""
     root = Path(__file__).resolve().parent.parent
     grammar_path = root / "grammar" / "tfql.tmLanguage.json"
     dist_dir = root / "dist"
-    ext_syntaxes_dir = root / "extensions" / "vscode-antigravity" / "syntaxes"
+    ext_dir = root / "extensions" / "vscode-antigravity"
+    ext_syntaxes_dir = ext_dir / "syntaxes"
 
     print(f"Loading grammar from {grammar_path}...")
     with open(grammar_path, "r", encoding="utf-8") as f:
@@ -195,6 +214,7 @@ def main() -> None:
 
     build_coteditor_bundle(grammar, dist_dir)
     sync_vscode_grammar(grammar_path, ext_syntaxes_dir)
+    package_vsix(ext_dir, dist_dir)
     print("Build complete.")
 
 

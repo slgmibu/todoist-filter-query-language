@@ -2,8 +2,8 @@
 
 Detects operating system (macOS, Linux, Windows) and installs grammar definitions
 and formatting tools into all discovered editor extension and syntax directories:
-- Antigravity IDE (Grammar & Auto-formatter)
-- Visual Studio Code (Grammar & Auto-formatter)
+- Antigravity IDE (VSIX & Extension directory)
+- Visual Studio Code (VSIX & Extension directory)
 - Cursor
 - CotEditor (macOS only: Syntax Bundle & Script Menu Formatter)
 """
@@ -26,8 +26,8 @@ def get_target_directories() -> list[tuple[str, Path]]:
 
     # 1. Antigravity IDE & VS Code variants (Cross-platform)
     editor_dirs: list[tuple[str, Path]] = [
-        ("Antigravity IDE", home / ".antigravity" / "extensions"),
-        ("Antigravity IDE (Alt)", home / ".antigravity-ide" / "extensions"),
+        ("Antigravity IDE", home / ".antigravity-ide" / "extensions"),
+        ("Antigravity IDE (Legacy)", home / ".antigravity" / "extensions"),
         ("VS Code", home / ".vscode" / "extensions"),
         ("Cursor", home / ".cursor" / "extensions"),
     ]
@@ -52,12 +52,32 @@ def get_target_directories() -> list[tuple[str, Path]]:
     return targets
 
 
+def install_via_cli(vsix_path: Path) -> None:
+    """Install extension via CLI binary if available."""
+    cli_candidates = [
+        Path("/Applications/Antigravity IDE.app/Contents/Resources/app/bin/antigravity-ide"),
+        shutil.which("antigravity-ide"),
+        shutil.which("code"),
+        shutil.which("cursor"),
+    ]
+
+    for cli in cli_candidates:
+        if cli and (isinstance(cli, str) or cli.exists()):
+            try:
+                cmd = [str(cli), "--install-extension", str(vsix_path), "--force"]
+                res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                if res.returncode == 0:
+                    print(f"  ✓ [{cli}] Installed VSIX package successfully.")
+            except Exception:
+                pass
+
+
 def install() -> None:
     """Compile grammar and install to all discovered editor environments."""
     root = Path(__file__).resolve().parent.parent
     dist_dir = root / "dist"
     ext_dir = root / "extensions" / "vscode-antigravity"
-    ext_name = "todoist-filter-query-language"
+    ext_name = "antigravity.todoist-filter-query-language"
 
     print(f"Detected OS: {platform.system()} ({platform.release()})")
     print("==> Building latest distributions...")
@@ -66,10 +86,15 @@ def install() -> None:
     build_script = root / "tools" / "build.py"
     subprocess.run([sys.executable, str(build_script)], check=True)
 
+    vsix_path = dist_dir / "todoist-filter-query-language-1.2.0.vsix"
+
+    print("\n==> Deploying to detected editors:")
+    if vsix_path.exists():
+        install_via_cli(vsix_path)
+
     targets = get_target_directories()
     installed_count = 0
 
-    print("\n==> Deploying to detected editors:")
     for name, target_path in targets:
         try:
             if "CotEditor" in name:
@@ -94,14 +119,13 @@ def install() -> None:
                 target_path.mkdir(parents=True, exist_ok=True)
                 dest = target_path / ext_name
                 shutil.copytree(ext_dir, dest, dirs_exist_ok=True)
-                print(f"  ✓ [{name}] Installed extension: {dest}")
+                print(f"  ✓ [{name}] Installed extension folder: {dest}")
                 installed_count += 1
         except Exception as err:
             print(f"  ✗ [{name}] Skipped: {err}")
 
-    print(f"\nDone! Installed to {installed_count} editor environment(s).")
-    print("• Antigravity IDE / VS Code: Format Document (Shift+Option+F) active.")
-    print("• CotEditor: Syntax bundle & Script menu formatter (Control+Option+F) active.")
+    print(f"\nDone! Installed to editor environment(s).")
+    print("NOTE: Please reload your editor window (Cmd+Shift+P -> 'Developer: Reload Window') for syntax highlighting to take effect.")
 
 
 if __name__ == "__main__":
