@@ -23,6 +23,8 @@ SCOPE_TO_COT_CATEGORY: dict[str, str] = {
     "constant.numeric.priority": "numbers",
     "constant.numeric.duration": "numbers",
     "constant.numeric.date": "numbers",
+    "constant.numeric.time": "numbers",
+    "constant.numeric.integer": "numbers",
     "keyword.other.flag": "keywords",
     "constant.language.temporal": "values",
     "constant.language.target": "values",
@@ -57,7 +59,7 @@ def build_coteditor_bundle(grammar: dict[str, Any], dist_dir: Path) -> None:
             "description": "Syntax highlighting for Todoist Filter Query Language (TFQL)",
             "lastModified": "2026-09-27",
             "license": "MIT",
-            "version": "1.0.0"
+            "version": "1.1.0"
         }
     }
     (bundle_dir / "Info.json").write_text(json.dumps(info_payload, indent=2))
@@ -79,25 +81,36 @@ def build_coteditor_bundle(grammar: dict[str, Any], dist_dir: Path) -> None:
     completions: list[dict[str, str]] = [
         {"text": "assigned to:", "type": "attributes"},
         {"text": "assigned by:", "type": "attributes"},
+        {"text": "added by:", "type": "attributes"},
         {"text": "due:", "type": "attributes"},
         {"text": "due before:", "type": "attributes"},
         {"text": "due after:", "type": "attributes"},
+        {"text": "date:", "type": "attributes"},
+        {"text": "date before:", "type": "attributes"},
+        {"text": "date after:", "type": "attributes"},
         {"text": "created:", "type": "attributes"},
         {"text": "created before:", "type": "attributes"},
         {"text": "created after:", "type": "attributes"},
         {"text": "deadline:", "type": "attributes"},
+        {"text": "deadline before:", "type": "attributes"},
+        {"text": "deadline after:", "type": "attributes"},
+        {"text": "workspace:", "type": "attributes"},
         {"text": "search:", "type": "attributes"},
         {"text": "today", "type": "values"},
         {"text": "tomorrow", "type": "values"},
         {"text": "yesterday", "type": "values"},
+        {"text": "first day", "type": "values"},
         {"text": "overdue", "type": "keywords"},
+        {"text": "od", "type": "keywords"},
         {"text": "recurring", "type": "keywords"},
         {"text": "subtask", "type": "keywords"},
+        {"text": "uncompletable", "type": "keywords"},
         {"text": "shared", "type": "keywords"},
         {"text": "no date", "type": "keywords"},
         {"text": "no time", "type": "keywords"},
+        {"text": "no deadline", "type": "keywords"},
         {"text": "no priority", "type": "keywords"},
-        {"text": "no label", "type": "variables"},
+        {"text": "no labels", "type": "variables"},
         {"text": "view all", "type": "keywords"},
         {"text": "p1", "type": "numbers"},
         {"text": "p2", "type": "numbers"},
@@ -117,7 +130,7 @@ def build_coteditor_bundle(grammar: dict[str, Any], dist_dir: Path) -> None:
     ]
     (regex_dir / "Outlines.json").write_text(json.dumps(outlines, indent=2))
 
-    # 5. Highlights.json (derived from TextMate repository rules)
+    # 5. Highlights.json
     highlights: dict[str, list[dict[str, Any]]] = {
         cat: [] for cat in [
             "attributes", "characters", "commands", "comments",

@@ -1,38 +1,26 @@
 {
   "attributes": [
     {
-      "begin": "\\b(due(\\s+(before|after|on))?):",
-      "description": "keyword.control.predicate.due.tfql",
-      "regularExpression": true,
-      "ignoreCase": true
-    },
-    {
-      "begin": "\\b(created(\\s+(before|after|on))?):",
-      "description": "keyword.control.predicate.created.tfql",
-      "regularExpression": true,
-      "ignoreCase": true
-    },
-    {
-      "begin": "\\b(added(\\s+(before|after|on))?):",
-      "description": "keyword.control.predicate.added.tfql",
-      "regularExpression": true,
-      "ignoreCase": true
-    },
-    {
-      "begin": "\\b(deadline(\\s+(before|after|on))?):",
-      "description": "keyword.control.predicate.deadline.tfql",
-      "regularExpression": true,
-      "ignoreCase": true
-    },
-    {
-      "begin": "\\b(completed(\\s+(before|after|on))?):",
-      "description": "keyword.control.predicate.completed.tfql",
+      "begin": "\\b((due|date|deadline|created|added|completed)(\\s+(before|after|on))?):",
+      "description": "keyword.control.predicate.date.tfql",
       "regularExpression": true,
       "ignoreCase": true
     },
     {
       "begin": "\\b(assigned(\\s+(to|by))?):",
       "description": "keyword.control.predicate.assigned.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
+      "begin": "\\b(added\\s+by):",
+      "description": "keyword.control.predicate.added.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
+      "begin": "\\bworkspace:",
+      "description": "keyword.control.predicate.workspace.tfql",
       "regularExpression": true,
       "ignoreCase": true
     },
@@ -57,7 +45,7 @@
   ],
   "commands": [
     {
-      "begin": "/(\"[^\"]+\"|[a-zA-Z0-9_\\-\\.\\*]+)",
+      "begin": "/(\"[^\"]+\"|(?:(?:\\[\\s\\S])|[a-zA-Z0-9_\\-\\.\\*])+(?:\\s+(?:(?:\\[\\s\\S])|[a-zA-Z0-9_\\-\\.\\*])+)*)",
       "description": "entity.name.section.tfql",
       "regularExpression": true
     }
@@ -99,7 +87,7 @@
       "regularExpression": true
     },
     {
-      "begin": "\\b(shared|assigned|subtask|recurring|overdue|all)\\b",
+      "begin": "\\b(shared|assigned|subtask|uncompletable|recurring|overdue|over\\s+due|od|all)\\b",
       "description": "keyword.other.flag.status.tfql",
       "regularExpression": true,
       "ignoreCase": true
@@ -111,13 +99,13 @@
       "ignoreCase": true
     },
     {
-      "begin": "\\bno\\s+(date|time|due\\s+date|priority)\\b",
+      "begin": "\\bno\\s+(date|time|due\\s+date|deadline|priority)\\b",
       "description": "keyword.other.flag.negative.tfql",
       "regularExpression": true,
       "ignoreCase": true
     },
     {
-      "begin": "\\b(next|past|last|before|after|starting|ending|until)\\b",
+      "begin": "\\b(next|past|last|before|after|starting|ending|until|in|at)\\b",
       "description": "keyword.operator.temporal.relation.tfql",
       "regularExpression": true,
       "ignoreCase": true
@@ -143,6 +131,12 @@
       "ignoreCase": true
     },
     {
+      "begin": "\\b\\d{1,2}(:\\d{2})?\\s*(am|pm)\\b",
+      "description": "constant.numeric.time.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
       "begin": "\\b\\d{4}-\\d{2}-\\d{2}\\b",
       "description": "constant.numeric.date.iso.tfql",
       "regularExpression": true
@@ -150,6 +144,11 @@
     {
       "begin": "\\b\\d{1,2}/\\d{1,2}(/\\d{2,4})?\\b",
       "description": "constant.numeric.date.short.tfql",
+      "regularExpression": true
+    },
+    {
+      "begin": "\\b\\d+\\b",
+      "description": "constant.numeric.integer.tfql",
       "regularExpression": true
     }
   ],
@@ -169,12 +168,12 @@
   ],
   "types": [
     {
-      "begin": "##(\"[^\"]+\"|[a-zA-Z0-9_\\-\\.\\*]+)",
+      "begin": "##(\"[^\"]+\"|(?:(?:\\[\\s\\S])|[a-zA-Z0-9_\\-\\.\\*])+(?:\\s+(?:(?:\\[\\s\\S])|[a-zA-Z0-9_\\-\\.\\*])+)*)",
       "description": "entity.name.type.project.parent.tfql",
       "regularExpression": true
     },
     {
-      "begin": "#(\"[^\"]+\"|[a-zA-Z0-9_\\-\\.\\*]+)",
+      "begin": "#(\"[^\"]+\"|(?:(?:\\[\\s\\S])|[a-zA-Z0-9_\\-\\.\\*])+(?:\\s+(?:(?:\\[\\s\\S])|[a-zA-Z0-9_\\-\\.\\*])+)*)",
       "description": "entity.name.type.project.tfql",
       "regularExpression": true
     }
@@ -183,6 +182,18 @@
     {
       "begin": "\\b(today|tomorrow|yesterday|now)\\b",
       "description": "constant.language.temporal.day.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
+      "begin": "\\b(first|last)\\s+day\\b",
+      "description": "constant.language.temporal.calendar.tfql",
+      "regularExpression": true,
+      "ignoreCase": true
+    },
+    {
+      "begin": "\\b(days?|weeks?|months?|years?|hours?|mins?|minutes?)\\b",
+      "description": "constant.language.temporal.unit.tfql",
       "regularExpression": true,
       "ignoreCase": true
     },
@@ -207,7 +218,7 @@
   ],
   "variables": [
     {
-      "begin": "@(\"[^\"]+\"|[a-zA-Z0-9_\\-\\.\\*]+)",
+      "begin": "[@%](\"[^\"]+\"|(?:(?:\\[\\s\\S])|[a-zA-Z0-9_\\-\\.\\*])+(?:\\s+(?:(?:\\[\\s\\S])|[a-zA-Z0-9_\\-\\.\\*])+)*)",
       "description": "variable.other.label.tfql",
       "regularExpression": true
     }

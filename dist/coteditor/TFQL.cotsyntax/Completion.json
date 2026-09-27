@@ -8,6 +8,10 @@
     "type": "attributes"
   },
   {
+    "text": "added by:",
+    "type": "attributes"
+  },
+  {
     "text": "due:",
     "type": "attributes"
   },
@@ -17,6 +21,18 @@
   },
   {
     "text": "due after:",
+    "type": "attributes"
+  },
+  {
+    "text": "date:",
+    "type": "attributes"
+  },
+  {
+    "text": "date before:",
+    "type": "attributes"
+  },
+  {
+    "text": "date after:",
     "type": "attributes"
   },
   {
@@ -36,6 +52,18 @@
     "type": "attributes"
   },
   {
+    "text": "deadline before:",
+    "type": "attributes"
+  },
+  {
+    "text": "deadline after:",
+    "type": "attributes"
+  },
+  {
+    "text": "workspace:",
+    "type": "attributes"
+  },
+  {
     "text": "search:",
     "type": "attributes"
   },
@@ -52,7 +80,15 @@
     "type": "values"
   },
   {
+    "text": "first day",
+    "type": "values"
+  },
+  {
     "text": "overdue",
+    "type": "keywords"
+  },
+  {
+    "text": "od",
     "type": "keywords"
   },
   {
@@ -61,6 +97,10 @@
   },
   {
     "text": "subtask",
+    "type": "keywords"
+  },
+  {
+    "text": "uncompletable",
     "type": "keywords"
   },
   {
@@ -76,11 +116,15 @@
     "type": "keywords"
   },
   {
+    "text": "no deadline",
+    "type": "keywords"
+  },
+  {
     "text": "no priority",
     "type": "keywords"
   },
   {
-    "text": "no label",
+    "text": "no labels",
     "type": "variables"
   },
   {

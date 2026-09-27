@@ -1,36 +1,90 @@
 // ==============================================================
-// Todoist Filter Query Language (TFQL) Test Suite
-// Extensions: .tfql, .tdq, .todoist
+// Todoist Filter Query Language (TFQL) Full Specification Test
+// Reference: https://www.todoist.com/help/todoist/features/introduction-to-filters-V98wIH
 // ==============================================================
 
-// --- Section 1: Daily Focus & Priority Matrix ---
-(today | overdue) & (p1 | p2)
-today & !#Work & @personal
-no date & p1 & !subtask
+// --- 1. Official Handy Filter Examples ---
+added by: me
+assigned to: me
+assigned by: me
+added by: Becky
+assigned to: Becky
+view all
+uncompletable
+subtask
+!subtask
+shared & !assigned
+no date & no deadline
+#Later & no date
+no time
+no date | no time
+created before: -365 days
+(today | overdue) & #Work
+(P1 | P2) & 14 days
+created before: -30 days
+Saturday & %night
+#Work & assigned to: me
 
-// --- Section 2: Projects, Subprojects, & Sections ---
-##Work & /Current Sprint & assigned to: me
-#"Client Alpha" & !/Archive & p1
-#Personal & (due before: next sunday | overdue)
-##Engineering & /* & @bug
-
-// --- Section 3: Temporal & Relative Queries ---
-due before: +7d & !due: today & !assigned
-created after: -14d & @backend & p1
-deadline before: next friday & (due: tomorrow | overdue)
-due on: 2026-10-01 & !completed
-
-// --- Section 4: Assignments, Collaboration & Labels ---
-shared & assigned to: me & !@waiting
-assigned by: me & !assigned to: me
+// --- 2. Label Variations (@ and % prefixes & wildcards) ---
+Today & %email
+%work | %office
+7 days & %waiting
+(assigned to: Denise | assigned to: Carol) & (due after: sunday & due before: 8 days after sunday) & %Todoist
+(all | today) & (all | overdue) & %work
+Today & !#Work
+#Homework & tomorrow & !%languages
+%home*
+no labels
 @urgent & (@work | @deepwork) & !@blocked
-no label & #Inbox & p2
 
-// --- Section 5: Search & Text Matching ---
+// --- 3. Projects, Folders, Sections & Escaped Characters ---
+#*Work
+/*Work*
+!/*
+!/* & !#Inbox
+##Design team
+#One \& Two
+#Shopping\ list
+##School & !#Science
+#Work & /Meetings
+
+// --- 4. Workspaces & Organizational Filters ---
+workspace: My projects
+workspace: Doist
+(workspace: Doist | workspace: Halist)
+
+// --- 5. Dates, Times, Deadlines & Offsets ---
+date: Jan 3
+date before: May 5 or date before: 5/5
+date after: May 5 or date after: 5/5
+due before: +4 hours
+due before: next week
+due before: sat
+(due: next week | due after: next week) & due before: 1 week after next week
+due before: first day
+due: yesterday, today
+today & due before: today at 2pm
+Overdue or over due or od
+overdue & !no time, today & !no time
+5 days or next 5 days
+recurring
+!recurring
+no time & !recurring
+deadline: today
+deadline after: yesterday & deadline before: in 7 days
+deadline before: today
+no deadline
+!no deadline
+
+// --- 6. Search Queries (Quoted & Unquoted) ---
+search: Meeting
+search: Meeting & today
+search: send email
 search: "quarterly review" & ##Operations
-search: "database migration" & @infra & due: next week
+search: "migration" & @infra & due: next week
 
-// --- Section 6: Compound Multi-section Filters (comma delimited) ---
+// --- 7. Compound Multi-section Filters (comma delimited) ---
+#Inbox & no date, All & !#Inbox & !no date
 today & overdue,
 p1 & no date,
 ##Work & /Urgent,

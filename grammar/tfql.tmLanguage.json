@@ -59,28 +59,20 @@
     "predicates": {
       "patterns": [
         {
-          "name": "keyword.control.predicate.due.tfql",
-          "match": "(?i)\\b(due(\\s+(before|after|on))?):"
-        },
-        {
-          "name": "keyword.control.predicate.created.tfql",
-          "match": "(?i)\\b(created(\\s+(before|after|on))?):"
-        },
-        {
-          "name": "keyword.control.predicate.added.tfql",
-          "match": "(?i)\\b(added(\\s+(before|after|on))?):"
-        },
-        {
-          "name": "keyword.control.predicate.deadline.tfql",
-          "match": "(?i)\\b(deadline(\\s+(before|after|on))?):"
-        },
-        {
-          "name": "keyword.control.predicate.completed.tfql",
-          "match": "(?i)\\b(completed(\\s+(before|after|on))?):"
+          "name": "keyword.control.predicate.date.tfql",
+          "match": "(?i)\\b((due|date|deadline|created|added|completed)(\\s+(before|after|on))?):"
         },
         {
           "name": "keyword.control.predicate.assigned.tfql",
           "match": "(?i)\\b(assigned(\\s+(to|by))?):"
+        },
+        {
+          "name": "keyword.control.predicate.added.tfql",
+          "match": "(?i)\\b(added\\s+by):"
+        },
+        {
+          "name": "keyword.control.predicate.workspace.tfql",
+          "match": "(?i)\\bworkspace:"
         },
         {
           "name": "keyword.control.predicate.search.tfql",
@@ -92,11 +84,11 @@
       "patterns": [
         {
           "name": "entity.name.type.project.parent.tfql",
-          "match": "##(\"[^\"]+\"|[a-zA-Z0-9_\\-\\.\\*]+)"
+          "match": "##(\"[^\"]+\"|(?:(?:\\[\\s\\S])|[a-zA-Z0-9_\\-\\.\\*])+(?:\\s+(?:(?:\\[\\s\\S])|[a-zA-Z0-9_\\-\\.\\*])+)*)"
         },
         {
           "name": "entity.name.type.project.tfql",
-          "match": "#(\"[^\"]+\"|[a-zA-Z0-9_\\-\\.\\*]+)"
+          "match": "#(\"[^\"]+\"|(?:(?:\\[\\s\\S])|[a-zA-Z0-9_\\-\\.\\*])+(?:\\s+(?:(?:\\[\\s\\S])|[a-zA-Z0-9_\\-\\.\\*])+)*)"
         }
       ]
     },
@@ -104,7 +96,7 @@
       "patterns": [
         {
           "name": "entity.name.section.tfql",
-          "match": "/(\"[^\"]+\"|[a-zA-Z0-9_\\-\\.\\*]+)"
+          "match": "/(\"[^\"]+\"|(?:(?:\\[\\s\\S])|[a-zA-Z0-9_\\-\\.\\*])+(?:\\s+(?:(?:\\[\\s\\S])|[a-zA-Z0-9_\\-\\.\\*])+)*)"
         }
       ]
     },
@@ -112,7 +104,7 @@
       "patterns": [
         {
           "name": "variable.other.label.tfql",
-          "match": "@(\"[^\"]+\"|[a-zA-Z0-9_\\-\\.\\*]+)"
+          "match": "[@%](\"[^\"]+\"|(?:(?:\\[\\s\\S])|[a-zA-Z0-9_\\-\\.\\*])+(?:\\s+(?:(?:\\[\\s\\S])|[a-zA-Z0-9_\\-\\.\\*])+)*)"
         },
         {
           "name": "keyword.other.flag.no-label.tfql",
@@ -152,7 +144,7 @@
       "patterns": [
         {
           "name": "keyword.other.flag.status.tfql",
-          "match": "(?i)\\b(shared|assigned|subtask|recurring|overdue|all)\\b"
+          "match": "(?i)\\b(shared|assigned|subtask|uncompletable|recurring|overdue|over\\s+due|od|all)\\b"
         },
         {
           "name": "keyword.other.flag.view-all.tfql",
@@ -160,7 +152,7 @@
         },
         {
           "name": "keyword.other.flag.negative.tfql",
-          "match": "(?i)\\bno\\s+(date|time|due\\s+date|priority)\\b"
+          "match": "(?i)\\bno\\s+(date|time|due\\s+date|deadline|priority)\\b"
         }
       ]
     },
@@ -171,12 +163,20 @@
           "match": "(?i)[+-]?\\d+\\s*(d|days?|w|weeks?|m|months?|y|years?|h|hours?)\\b"
         },
         {
+          "name": "constant.numeric.time.tfql",
+          "match": "(?i)\\b\\d{1,2}(:\\d{2})?\\s*(am|pm)\\b"
+        },
+        {
           "name": "constant.numeric.date.iso.tfql",
           "match": "\\b\\d{4}-\\d{2}-\\d{2}\\b"
         },
         {
           "name": "constant.numeric.date.short.tfql",
           "match": "\\b\\d{1,2}/\\d{1,2}(/\\d{2,4})?\\b"
+        },
+        {
+          "name": "constant.numeric.integer.tfql",
+          "match": "\\b\\d+\\b"
         }
       ]
     },
@@ -187,8 +187,16 @@
           "match": "(?i)\\b(today|tomorrow|yesterday|now)\\b"
         },
         {
+          "name": "constant.language.temporal.calendar.tfql",
+          "match": "(?i)\\b(first|last)\\s+day\\b"
+        },
+        {
+          "name": "constant.language.temporal.unit.tfql",
+          "match": "(?i)\\b(days?|weeks?|months?|years?|hours?|mins?|minutes?)\\b"
+        },
+        {
           "name": "keyword.operator.temporal.relation.tfql",
-          "match": "(?i)\\b(next|past|last|before|after|starting|ending|until)\\b"
+          "match": "(?i)\\b(next|past|last|before|after|starting|ending|until|in|at)\\b"
         },
         {
           "name": "constant.language.temporal.weekday.tfql",
